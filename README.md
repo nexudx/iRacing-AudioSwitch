@@ -21,20 +21,20 @@ A PowerShell script for seamlessly managing audio output devices when launching 
 
 ## Installation
 
-1. Download the entire project folder
+1. Download the entire project folder.
 2. Ensure PowerShell script execution is allowed:
    ```powershell
    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
    ```
-3. The required AudioDeviceCmdlets module will be installed automatically on first launch
+3. The required AudioDeviceCmdlets module will be installed automatically on first launch.
 
 ## First-Time Setup
 
-1. Start the script `ir-audio-switch.ps1`
+1. Start the script `ir-audio-switch.ps1`.
 2. On first run, you will be prompted to:
-   - Select your default audio device
-   - Select your VR audio device
-3. The selection is automatically saved
+   - Select your default audio device.
+   - Select your VR audio device.
+3. The selection is automatically saved.
 
 ## Usage
 
@@ -43,9 +43,9 @@ A PowerShell script for seamlessly managing audio output devices when launching 
    .\ir-audio-switch.ps1
    ```
 2. The script runs in the background and monitors iRacing:
-   - When iRacing starts, it automatically switches to the VR audio device
-   - When iRacing closes, it switches back to the default audio device
-3. Exit the script with CTRL+C
+   - When iRacing starts, it automatically switches to the VR audio device.
+   - When iRacing closes, it switches back to the default audio device.
+3. Exit the script with CTRL+C.
 
 ## Configuration
 
