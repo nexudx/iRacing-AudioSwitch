@@ -58,7 +58,6 @@ function Write-Log {
         $color = $LevelColors[$Level]
         
         if ($Level -eq 'Debug' -and $VerbosePreference -ne 'Continue') {
-            # Do not output Debug messages if VerbosePreference is not 'Continue'
         } else {
             Write-Host $consoleMessage -ForegroundColor $color
         }
