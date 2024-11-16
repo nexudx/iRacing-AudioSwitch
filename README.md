@@ -1,62 +1,62 @@
 # IR Audio Switch
 
-Ein PowerShell-Script zur automatischen Umschaltung von Audio-Ausgabegeräten beim Start und Beenden von iRacing.
+A PowerShell script for automatically switching audio output devices when starting and stopping iRacing.
 
-## Funktionen
+## Features
 
-- Automatische Erkennung von iRacing
-- Automatische Umschaltung zwischen Standard- und VR-Audiogerät
-- Persistente Konfiguration
-- Ausführliches Logging
-- Fehlertolerante Audiogeräte-Umschaltung mit Retry-Mechanismus
-- Benutzerfreundliche Ersteinrichtung
-- Sauberes Herunterfahren mit CTRL+C
+- Automatic detection of iRacing
+- Automatic switching between default and VR audio device
+- Persistent configuration
+- Detailed logging
+- Fault-tolerant audio device switching with retry mechanism
+- User-friendly first-time setup
+- Clean shutdown with CTRL+C
 
-## Voraussetzungen
+## Requirements
 
-- Windows PowerShell 5.1 oder höher
-- Administratorrechte für die Erstinstallation des AudioDeviceCmdlets-Moduls
-- Windows 10/11 kompatible Audiogeräte
+- Windows PowerShell 5.1 or higher
+- Administrator rights for initial installation of AudioDeviceCmdlets module
+- Windows 10/11 compatible audio devices
 
 ## Installation
 
-1. Laden Sie den gesamten Projektordner herunter
-2. Stellen Sie sicher, dass die Ausführung von PowerShell-Skripten erlaubt ist:
+1. Download the entire project folder
+2. Ensure PowerShell script execution is allowed:
    ```powershell
    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
    ```
-3. Beim ersten Start wird das benötigte AudioDeviceCmdlets-Modul automatisch installiert
+3. The required AudioDeviceCmdlets module will be installed automatically on first launch
 
-## Ersteinrichtung
+## First-Time Setup
 
-1. Starten Sie das Script `ir-audio-switch.ps1`
-2. Bei der ersten Ausführung werden Sie aufgefordert:
-   - Ihr Standard-Audiogerät auszuwählen
-   - Ihr VR-Audiogerät auszuwählen
-3. Die Auswahl wird automatisch gespeichert
+1. Start the script `ir-audio-switch.ps1`
+2. On first run, you will be prompted to:
+   - Select your default audio device
+   - Select your VR audio device
+3. The selection is automatically saved
 
-## Verwendung
+## Usage
 
-1. Starten Sie das Script:
+1. Start the script:
    ```powershell
    .\ir-audio-switch.ps1
    ```
-2. Das Script läuft im Hintergrund und überwacht iRacing:
-   - Beim Start von iRacing wird automatisch zum VR-Audiogerät gewechselt
-   - Beim Beenden von iRacing wird zum Standard-Audiogerät zurückgeschaltet
-3. Beenden Sie das Script mit CTRL+C
+2. The script runs in the background and monitors iRacing:
+   - When iRacing starts, it automatically switches to the VR audio device
+   - When iRacing closes, it switches back to the default audio device
+3. Exit the script with CTRL+C
 
-## Konfiguration
+## Configuration
 
-Die Konfiguration wird in `ir-audio-switch.cfg.json` gespeichert und enthält:
-- Standard-Audiogerät (`defaultDevice`)
-- VR-Audiogerät (`vrDevice`)
-- Maximale Anzahl der Log-Zeilen (`maxLogLines`)
+The configuration is stored in `ir-audio-switch.cfg.json` and contains:
+- Default audio device (`defaultDevice`)
+- VR audio device (`vrDevice`)
+- Maximum number of log lines (`maxLogLines`)
 
-### Parameter
+### Parameters
 
-Das Script akzeptiert folgende Parameter:
-- `-LogFile`: Pfad zur Log-Datei (Standard: ir-audio-switch.log im Scriptverzeichnis)
-- `-MaxLogLines`: Maximale Anzahl der Log-Zeilen (Standard: 42)
+The script accepts the following parameters:
+- `-LogFile`: Path to the log file (default: ir-audio-switch.log in script directory)
+- `-MaxLogLines`: Maximum number of log lines (default: 42)
 
-Beispiel:
+Example:
