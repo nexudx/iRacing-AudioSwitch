@@ -4,24 +4,28 @@ Dieses PowerShell-Skript überwacht den iRacing-Prozess und wechselt automatisch
 - Ein Standard-Audiogerät für die normale Systemnutzung
 - Ein VR-spezifisches Audiogerät, wenn iRacing läuft
 
-## Voraussetzungen
+This PowerShell script monitors the iRacing process and automatically switches between two configured audio devices:
+- A default audio device for normal system use
+- A VR-specific audio device when iRacing is running
+
+## Voraussetzungen / Prerequisites
 - PowerShell 5.1
-- AudioDeviceCmdlets Modul
+- AudioDeviceCmdlets Modul / Module
 
 ## Installation
-1. Klone das Repository:
+1. Klone das Repository / Clone the repository:
     ```sh
     git clone https://github.com/dein-benutzername/ir-audio-switch.git
     cd ir-audio-switch
     ```
 
-2. Installiere die erforderlichen Module:
+2. Installiere die erforderlichen Module / Install the required modules:
     ```powershell
     Install-Module -Name AudioDeviceCmdlets -Force -Scope CurrentUser
     ```
 
-## Nutzung
-Führe das Skript mit den Standardparametern aus:
+## Nutzung / Usage
+Führe das Skript mit den Standardparametern aus / Run the script with default parameters:
 ```powershell
 .\ir-audio-switch.ps1
 ```
