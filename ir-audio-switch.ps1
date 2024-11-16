@@ -1,24 +1,25 @@
-#Requires -Version 5.1
-
 [CmdletBinding()]
 param(
-    [ValidateScript({Test-Path (Split-Path $_ -Parent)})]
+    [ValidateScript({
+        $parent = Split-Path $_ -Parent
+        if (-not (Test-Path $parent)) {
+            throw "Folder does not exist: $parent"
+        }
+        return $true
+    })]
     [string]$LogFile = "$(Join-Path $PSScriptRoot 'ir-audio-switch.log')",
+    
     [ValidateRange(10, 10000)]
-    [int]$MaxLogLines = 42
+    [int]$MaxLogLines = 100
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$PSDefaultParameterValues['*:Encoding'] = 'utf8'
 
-if ($PSVersionTable.PSVersion.Major -ge 7) {
-    $PSDefaultParameterValues['*:Encoding'] = 'utf8'
-}
-
-$configPath = Join-Path $PSScriptRoot "ir-audio-switch.cfg.json"
+$script:configPath = Join-Path $PSScriptRoot "ir-audio-switch.cfg.json"
 $script:exitRequested = $false
+$script:audioDeviceCache = @{}
 
 function Update-Log {
     param (
@@ -59,15 +60,17 @@ function Write-Log {
     }
 }
 
-if (-not (Get-Module -ListAvailable -Name AudioDeviceCmdlets)) {
-    Write-Log "Installing AudioDeviceCmdlets module..." -Level Warning
-    Install-Module -Name AudioDeviceCmdlets -Force -Scope CurrentUser
-}
-Import-Module AudioDeviceCmdlets
-
 function Test-AudioDeviceExists {
+    [OutputType([bool])]
     param ([string]$deviceName)
-    return [bool](Get-AudioDevice -List | Where-Object { $_.Name -eq $deviceName })
+    
+    if ($script:audioDeviceCache.ContainsKey($deviceName)) {
+        return $script:audioDeviceCache[$deviceName]
+    }
+    
+    $exists = [bool](Get-AudioDevice -List | Where-Object { $_.Name -eq $deviceName })
+    $script:audioDeviceCache[$deviceName] = $exists
+    return $exists
 }
 
 function Get-SavedConfiguration {
@@ -123,39 +126,42 @@ function Select-AudioDevice {
 }
 
 function Set-DefaultAudioDevice {
+    [OutputType([bool])]
     param(
-        [string]$deviceName,
-        [int]$retryCount = 3,
-        [int]$retryDelay = 2000
+        [Parameter(Mandatory)][string]$deviceName,
+        [int]$retryCount = 2,
+        [int]$retryDelay = 1000
     )
+    
+    $currentDefault = Get-AudioDevice -Playback
+    if ($currentDefault.Name -eq $deviceName) {
+        Write-Log "Audio device '$deviceName' already active" -Level Debug
+        return $true
+    }
+    
     for ($i = 1; $i -le $retryCount; $i++) {
         try {
-            $audioDevice = Get-AudioDevice -List | Where-Object { $_.Name -eq $deviceName }
-            if ($audioDevice) {
-                $currentDefault = Get-AudioDevice -Playback
-                if ($currentDefault.Name -eq $deviceName) {
-                    Write-Log "Audio device '$deviceName' is already active"
-                    return $true
-                }
+            $audioDevice = Get-AudioDevice -List | 
+                Where-Object { $_.Name -eq $deviceName -and $_.Type -eq 'Playback' } |
+                Select-Object -First 1
                 
-                Set-AudioDevice -ID $audioDevice.ID
-                Start-Sleep -Milliseconds 500
-                
-                $newDefault = Get-AudioDevice -Playback
-                if ($newDefault.Name -eq $deviceName) {
-                    Write-Log "Switched audio device to: $deviceName (Attempt $i/$retryCount)"
-                    return $true
-                }
-                Write-Log "Switch verification failed! (Attempt $i/$retryCount)" -Level Warning
-            } else {
-                Write-Log "Audio device '$deviceName' not found! (Attempt $i/$retryCount)" -Level Warning
+            if (-not $audioDevice) {
+                Write-Log "Device not found: $deviceName (Attempt $i/$retryCount)" -Level Warning
+                continue
+            }
+            
+            Set-AudioDevice -ID $audioDevice.ID
+            Start-Sleep -Milliseconds 250
+            
+            if ((Get-AudioDevice -Playback).Name -eq $deviceName) {
+                Write-Log "Switched to: $deviceName"
+                return $true
             }
         } catch {
-            Write-Log "Error setting audio device: $_ (Attempt $i/$retryCount)" -Level Warning
+            Write-Log "Switch failed: $_ (Attempt $i/$retryCount)" -Level Warning
             Start-Sleep -Milliseconds $retryDelay
         }
     }
-    Write-Log "Failed to set audio device after $retryCount attempts" -Level Error
     return $false
 }
 
@@ -227,71 +233,54 @@ function Watch-IRacingProcess {
         [Parameter(Mandatory)][string]$DefaultDevice,
         [Parameter(Mandatory)][string]$VRDevice
     )
+    
     try {
-        $activityMessage = "Monitoring iRacing Process"
-        Write-Progress -Activity $activityMessage -Status "Initializing..." -PercentComplete 0
-        
         $null = Register-ObjectEvent -InputObject ([Console]) -EventName CancelKeyPress -Action {
             $script:exitRequested = $true
             $event.Cancel = $true
         }
         
-        $script:exitRequested = $false
+        $processName = "iRacingSim64DX11"
         $switchAttempts = 0
+        $lastState = $false
         
         while (-not $script:exitRequested) {
-            $statusMessage = "Waiting for iRacing..."
-            Write-Progress -Activity $activityMessage -Status $statusMessage
-            $Host.UI.RawUI.WindowTitle = "IR Audio Switch - $statusMessage"
+            $currentState = [bool](Get-Process -Name $processName -ErrorAction SilentlyContinue)
             
-            $iRacingProcess = Get-Process -Name "iRacingSim64DX11" -ErrorAction SilentlyContinue
-            
-            if ($iRacingProcess) {
-                $switchAttempts++
-                $statusMessage = "iRacing Active - Switching to VR Audio"
-                Write-Progress -Activity $activityMessage -Status $statusMessage
-                $Host.UI.RawUI.WindowTitle = "IR Audio Switch - $statusMessage"
+            if ($currentState -ne $lastState) {
+                $targetDevice = if ($currentState) { $VRDevice } else { $DefaultDevice }
                 
-                if (-not (Set-DefaultAudioDevice $VRDevice)) {
-                    Write-Log "Failed to switch to VR device (Attempt: $switchAttempts)" -Level Warning
+                if (-not (Set-DefaultAudioDevice $targetDevice)) {
+                    $switchAttempts++ 
                     if ($switchAttempts -gt 3) {
-                        throw "Multiple VR device switch failures"
+                        throw "Multiple device switch failures"
                     }
-                    Start-Sleep -Seconds 2
+                    Start-Sleep -Seconds 1
                     continue
                 }
                 
                 $switchAttempts = 0
-                do {
-                    Start-Sleep -Milliseconds 250
-                    $iRacingProcess = Get-Process -Name "iRacingSim64DX11" -ErrorAction SilentlyContinue
-                    Write-Progress -Activity $activityMessage -Status "iRacing Running - Using VR Audio"
-                } while (-not $script:exitRequested -and $iRacingProcess)
-                
-                if (-not $script:exitRequested) {
-                    $statusMessage = "iRacing Closed - Restoring Default Audio"
-                    Write-Progress -Activity $activityMessage -Status $statusMessage
-                    $Host.UI.RawUI.WindowTitle = "IR Audio Switch - $statusMessage"
-                    
-                    if (-not (Set-DefaultAudioDevice $DefaultDevice)) {
-                        throw "Default Device Switch Error"
-                    }
-                }
+                $lastState = $currentState
             }
             
             Start-Sleep -Milliseconds 250
         }
     } catch {
-        Write-Log "Critical error in process monitoring: $_" -Level Error -ScriptBlock $MyInvocation.ScriptLineNumber
+        Write-Log "Critical error: $_" -Level Error
         throw
     } finally {
-        Write-Progress -Activity $activityMessage -Status "Cleaning up..." -Completed
         Get-EventSubscriber | Unregister-Event
         Invoke-Cleanup -DefaultDevice $DefaultDevice
     }
 }
 
 try {
+    if (-not (Get-Module -ListAvailable -Name AudioDeviceCmdlets)) {
+        Write-Log "Installing AudioDeviceCmdlets module..." -Level Warning
+        Install-Module -Name AudioDeviceCmdlets -Force -Scope CurrentUser
+    }
+    Import-Module AudioDeviceCmdlets
+
     $config = Get-SavedConfiguration
     if ($null -eq $config) {
         $config = Initialize-DeviceConfiguration
