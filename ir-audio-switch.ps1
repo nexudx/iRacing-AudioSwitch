@@ -277,11 +277,6 @@ function Watch-IRacingProcess {
     }
 }
 
-# Output script header
-Write-Host "==========================================" -ForegroundColor Cyan
-Write-Host "      iRacing Audio Device Switcher       " -ForegroundColor Cyan
-Write-Host "==========================================" -ForegroundColor Cyan
-
 try {
     if (-not (Get-Module -ListAvailable -Name AudioDeviceCmdlets)) {
         Write-Log "Installing AudioDeviceCmdlets module..." -Level Warning
