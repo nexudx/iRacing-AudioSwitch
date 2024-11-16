@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.1] - 2024-01-16
+### Changed
+- Fixed date format in previous changelog entries
+- Updated changelog structure for better readability
+
 ## [1.1.0] - 2023-11-16
 ### Changed
 - Updated repository URL in README.md.
