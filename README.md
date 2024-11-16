@@ -1,6 +1,6 @@
-# IR Audio Switch
+# Audio Device Switcher for iRacing
 
-A PowerShell script for automatically switching audio output devices when starting and stopping iRacing.
+A PowerShell script for seamlessly managing audio output devices when launching and exiting iRacing simulation software.
 
 ## Features
 
@@ -17,6 +17,7 @@ A PowerShell script for automatically switching audio output devices when starti
 - Windows PowerShell 5.1 or higher, PowerShell 7+ recommended
 - Administrator rights for initial installation of AudioDeviceCmdlets module
 - Windows 10/11 compatible audio devices
+- iRacing simulation software
 
 ## Installation
 
@@ -67,7 +68,7 @@ Example:
 
 ## Configuration Examples
 
-Here are some example configurations for `ir-audio-switch.cfg.json`:
+Example configuration in `ir-audio-switch.cfg.json` for a typical VR racing setup:
 
 ```json
 {
