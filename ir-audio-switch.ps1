@@ -1,55 +1,3 @@
-<#
-.SYNOPSIS
-    Automatically switches audio output devices when iRacing is launched or closed.
-
-.DESCRIPTION
-    This script monitors the iRacing process and automatically switches between two configured audio devices:
-    - A default audio device for normal system use
-    - A VR-specific audio device when iRacing is running
-    
-    The script includes functionality for:
-    - Initial configuration and device selection
-    - Persistent configuration storage
-    - Logging with rotation
-    - Automatic audio device switching
-    - Error handling and cleanup
-    - Graceful shutdown handling
-
-.PARAMETER LogFile
-    Path to the log file. Defaults to 'ir-audio-switch.log' in the script directory.
-
-.PARAMETER MaxLogLines
-    Maximum number of lines to keep in the log file before rotation. Defaults to 42.
-
-.NOTES
-    Version:        1.1
-    Author:         ekiko
-    Prerequisite:   PowerShell 5.1
-    Required Modules: AudioDeviceCmdlets
-
-.EXAMPLE
-    .\ir-audio-switch.ps1
-    Runs the script with default parameters.
-
-.EXAMPLE
-    .\ir-audio-switch.ps1 -LogFile "C:\logs\custom.log" -MaxLogLines 100
-    Runs the script with a custom log file location and increased log rotation size.
-
-.INPUTS
-    None. Does not accept pipeline input.
-
-.OUTPUTS
-    None. Creates and maintains a log file.
-
-.LINK
-    https://www.powershellgallery.com/packages/AudioDeviceCmdlets/
-
-.FUNCTIONALITY
-    - Audio device management
-    - Process monitoring
-    - Configuration management
-    - Logging
-#>
 #Requires -Version 5.1
 
 [CmdletBinding()]
@@ -72,7 +20,7 @@ function Update-Log {
         [int]$maxLines
     )
     if (Test-Path $logFilePath) {
-        $logContent = @(Get-Content $logFilePath)  # Force Array mit @()
+        $logContent = @(Get-Content $logFilePath)
         if ($logContent.Count -gt $maxLines) {
             $trimmedContent = $logContent[-$maxLines..-1]
             Set-Content -Path $logFilePath -Value $trimmedContent
@@ -113,7 +61,6 @@ function Get-SavedConfiguration {
         try {
             $config = Get-Content $configPath -Raw | ConvertFrom-Json
             
-            # Update global MaxLogLines from config ohne Logging
             if ($config.maxLogLines) {
                 $script:MaxLogLines = $config.maxLogLines
             }
@@ -165,14 +112,13 @@ function Set-DefaultAudioDevice {
     param(
         [string]$deviceName,
         [int]$retryCount = 3,
-        [int]$retryDelay = 2000  # Erhöht von 1000 auf 2000 ms
+        [int]$retryDelay = 2000
     )
     
     for ($i = 1; $i -le $retryCount; $i++) {
         try {
             $audioDevice = Get-AudioDevice -List | Where-Object { $_.Name -eq $deviceName }
             if ($audioDevice) {
-                # Prüfe ob das Gerät bereits aktiv ist
                 $currentDefault = Get-AudioDevice -Playback
                 if ($currentDefault.Name -eq $deviceName) {
                     Write-Log "Audio device '$deviceName' is already active"
@@ -180,9 +126,8 @@ function Set-DefaultAudioDevice {
                 }
                 
                 Set-AudioDevice -ID $audioDevice.ID
-                Start-Sleep -Milliseconds 500  # Kurze Wartezeit nach dem Umschalten
+                Start-Sleep -Milliseconds 500
                 
-                # Verifiziere die Umschaltung
                 $newDefault = Get-AudioDevice -Playback
                 if ($newDefault.Name -eq $deviceName) {
                     Write-Log "Switched audio device to: $deviceName (Attempt $i/$retryCount)"
