@@ -10,7 +10,7 @@ param(
     [string]$LogFile = "$(Join-Path $PSScriptRoot 'ir-audio-switch.log')",
     
     [ValidateRange(10, 10000)]
-    [int]$MaxLogLines = 100
+    [int]$MaxLogLines = 42
 )
 
 Set-StrictMode -Version Latest

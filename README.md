@@ -7,7 +7,7 @@ A PowerShell script for automatically switching audio output devices when starti
 - Automatic detection of iRacing
 - Automatic switching between default and VR audio device
 - Persistent configuration
-- Detailed logging
+- Detailed logging with automatic log rotation
 - Fault-tolerant audio device switching with retry mechanism
 - User-friendly first-time setup
 - Clean shutdown with CTRL+C
@@ -57,7 +57,7 @@ The configuration is stored in `ir-audio-switch.cfg.json` and contains:
 
 The script accepts the following parameters:
 - `-LogFile`: Path to the log file (default: ir-audio-switch.log in script directory)
-- `-MaxLogLines`: Maximum number of log lines (default: 42)
+- `-MaxLogLines`: Maximum number of lines to keep in the log file (default: 42, range: 10-10000)
 
 Example:
 
