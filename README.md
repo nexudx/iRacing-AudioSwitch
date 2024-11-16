@@ -61,6 +61,10 @@ The script accepts the following parameters:
 
 Example:
 
+```powershell
+.\ir-audio-switch.ps1 -LogFile "C:\path\to\logfile.log" -MaxLogLines 100
+```
+
 ## Configuration Examples
 
 Here are some example configurations for `ir-audio-switch.cfg.json`:
