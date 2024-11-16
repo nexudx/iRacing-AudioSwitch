@@ -66,7 +66,7 @@ $PSDefaultParameterValues['*:Encoding'] = 'utf8'
 $configPath = Join-Path $PSScriptRoot "ir-audio-switch.cfg.json"
 $script:exitRequested = $false
 
-function Rotate-Log {
+function Update-Log {
     param (
         [string]$logFilePath,
         [int]$maxLines
@@ -85,7 +85,7 @@ function Write-Log {
         [Parameter(Mandatory)][string]$Message,
         [ValidateSet('Info','Warning','Error')][string]$Level = 'Info'
     )
-    Rotate-Log -logFilePath $LogFile -maxLines $MaxLogLines
+    Update-Log -logFilePath $LogFile -maxLines $MaxLogLines
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     $logMessage = "[$timestamp] [$Level] $Message"
     $consoleMessage = "[$Level] $Message"
