@@ -60,3 +60,28 @@ The script accepts the following parameters:
 - `-MaxLogLines`: Maximum number of log lines (default: 42)
 
 Example:
+
+## Configuration Examples
+
+Here are some example configurations for `ir-audio-switch.cfg.json`:
+
+```json
+{
+  "defaultDevice": "Speakers (Realtek High Definition Audio)",
+  "vrDevice": "Headphones (Oculus Virtual Audio Device)",
+  "maxLogLines": 100
+}
+```
+
+## Troubleshooting
+
+If you encounter any issues, try the following steps:
+
+1. Ensure that your audio devices are properly connected and recognized by Windows.
+2. Check the log file for any error messages.
+3. Make sure you have the necessary permissions to run the script and change audio devices.
+4. Re-run the first-time setup if you have changed your audio devices.
+
+## Licensing
+
+This project is licensed under the MIT License. See the `LICENSE` file for more details.
