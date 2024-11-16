@@ -225,13 +225,13 @@ function Invoke-Cleanup {
     Write-Log "Cleanup completed"
 }
 
+# Optimierung der Schleifen und Abfragen
 function Watch-IRacingProcess {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$DefaultDevice,
         [Parameter(Mandatory)][string]$VRDevice
     )
-    # Hinzufügen eines Kommentars zur Erklärung der Logik
     # Diese Funktion überwacht den iRacing-Prozess und wechselt die Audiogeräte entsprechend
     try {
         $activityMessage = "Monitoring iRacing Process"
