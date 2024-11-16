@@ -22,8 +22,8 @@
     Maximum number of lines to keep in the log file before rotation. Defaults to 42.
 
 .NOTES
-    Version:        1.0
-    Author:         Not specified
+    Version:        1.1
+    Author:         ekiko
     Prerequisite:   PowerShell 5.1
     Required Modules: AudioDeviceCmdlets
 

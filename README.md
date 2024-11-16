@@ -11,7 +11,7 @@ This PowerShell script monitors the iRacing process and automatically switches b
 ## Installation
 1. Clone the repository:
     ```sh
-    git clone https://github.com/your-username/ir-audio-switch.git
+    git clone https://github.com/ekiko/ir-audio-switch.git
     cd ir-audio-switch
     ```
 
