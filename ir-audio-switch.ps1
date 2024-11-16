@@ -2,7 +2,9 @@
 
 [CmdletBinding()]
 param(
+    [ValidateScript({Test-Path (Split-Path $_ -Parent)})]
     [string]$LogFile = "$(Join-Path $PSScriptRoot 'ir-audio-switch.log')",
+    [ValidateRange(10, 10000)]
     [int]$MaxLogLines = 42
 )
 
@@ -29,17 +31,21 @@ function Update-Log {
 }
 
 function Write-Log {
+    [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$Message,
-        [ValidateSet('Info','Warning','Error')][string]$Level = 'Info'
+        [ValidateSet('Info','Warning','Error','Debug')][string]$Level = 'Info',
+        [string]$ScriptBlock = $MyInvocation.ScriptLineNumber
     )
     Update-Log -logFilePath $LogFile -maxLines $MaxLogLines
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $logMessage = "[$timestamp] [$Level] $Message"
+    $logMessage = "[$timestamp] [$Level] [$ScriptBlock] $Message"
     $consoleMessage = "[$Level] $Message"
+    
     switch ($Level) {
         'Warning' { Write-Host $consoleMessage -ForegroundColor Yellow }
         'Error'   { Write-Host $consoleMessage -ForegroundColor Red }
+        'Debug'   { if ($VerbosePreference -eq 'Continue') { Write-Host $consoleMessage -ForegroundColor Gray } }
         default   { Write-Host $consoleMessage -ForegroundColor Green }
     }
     Add-Content -Path $LogFile -Value $logMessage
@@ -210,37 +216,60 @@ function Invoke-Cleanup {
 }
 
 function Watch-IRacingProcess {
+    [CmdletBinding()]
     param(
-        [string]$DefaultDevice,
-        [string]$VRDevice
+        [Parameter(Mandatory)][string]$DefaultDevice,
+        [Parameter(Mandatory)][string]$VRDevice
     )
+    
     try {
+        $activityMessage = "Monitoring iRacing Process"
+        Write-Progress -Activity $activityMessage -Status "Initializing..." -PercentComplete 0
+        
         $null = Register-ObjectEvent -InputObject ([Console]) -EventName CancelKeyPress -Action {
             $script:exitRequested = $true
             $event.Cancel = $true
         }
         
         $script:exitRequested = $false
+        $switchAttempts = 0
         
         while (-not $script:exitRequested) {
-            $Host.UI.RawUI.WindowTitle = "IR Audio Switch - Monitoring..."
+            $statusMessage = "Waiting for iRacing..."
+            Write-Progress -Activity $activityMessage -Status $statusMessage
+            $Host.UI.RawUI.WindowTitle = "IR Audio Switch - $statusMessage"
+            
             $iRacingProcess = Get-Process -Name "iRacingSim64DX11" -ErrorAction SilentlyContinue
             
             if ($iRacingProcess) {
-                $Host.UI.RawUI.WindowTitle = "IR Audio Switch - iRacing aktiv (VR Audio)"
+                $switchAttempts++
+                $statusMessage = "iRacing Active - Switching to VR Audio"
+                Write-Progress -Activity $activityMessage -Status $statusMessage
+                $Host.UI.RawUI.WindowTitle = "IR Audio Switch - $statusMessage"
+                
                 if (-not (Set-DefaultAudioDevice $VRDevice)) {
-                    throw "VR Device Fehler"
+                    Write-Log "Failed to switch to VR device (Attempt: $switchAttempts)" -Level Warning
+                    if ($switchAttempts -gt 3) {
+                        throw "Multiple VR device switch failures"
+                    }
+                    Start-Sleep -Seconds 2
+                    continue
                 }
                 
+                $switchAttempts = 0
                 do {
                     Start-Sleep -Milliseconds 250
                     $iRacingProcess = Get-Process -Name "iRacingSim64DX11" -ErrorAction SilentlyContinue
+                    Write-Progress -Activity $activityMessage -Status "iRacing Running - Using VR Audio"
                 } while (-not $script:exitRequested -and $iRacingProcess)
                 
                 if (-not $script:exitRequested) {
-                    $Host.UI.RawUI.WindowTitle = "IR Audio Switch - iRacing beendet"
+                    $statusMessage = "iRacing Closed - Restoring Default Audio"
+                    Write-Progress -Activity $activityMessage -Status $statusMessage
+                    $Host.UI.RawUI.WindowTitle = "IR Audio Switch - $statusMessage"
+                    
                     if (-not (Set-DefaultAudioDevice $DefaultDevice)) {
-                        throw "Default Device Fehler"
+                        throw "Default Device Switch Error"
                     }
                 }
             }
@@ -249,10 +278,11 @@ function Watch-IRacingProcess {
         }
     }
     catch {
-        Write-Log "Error in process monitoring: $_" -Level Error
+        Write-Log "Critical error in process monitoring: $_" -Level Error -ScriptBlock $MyInvocation.ScriptLineNumber
         throw
     }
     finally {
+        Write-Progress -Activity $activityMessage -Status "Cleaning up..." -Completed
         Get-EventSubscriber | Unregister-Event
         Invoke-Cleanup -DefaultDevice $DefaultDevice
     }
