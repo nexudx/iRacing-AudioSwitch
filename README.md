@@ -1,91 +1,91 @@
 # IR Audio Switch
 
-Ein PowerShell-Skript zum automatischen Umschalten der Audioausgabegeräte beim Starten und Stoppen von iRacing.
+A PowerShell script for automatically switching audio output devices when starting and stopping iRacing.
 
-## Funktionen
+## Features
 
-- Automatische Erkennung von iRacing
-- Automatisches Umschalten zwischen Standard- und VR-Audiogerät
-- Persistente Konfiguration
-- Detaillierte Protokollierung
-- Fehlertolerantes Umschalten der Audiogeräte mit Wiederholungsmechanismus
-- Benutzerfreundliche Ersteinrichtung
-- Sauberes Herunterfahren mit CTRL+C
+- Automatic detection of iRacing
+- Automatic switching between default and VR audio device
+- Persistent configuration
+- Detailed logging
+- Fault-tolerant audio device switching with retry mechanism
+- User-friendly first-time setup
+- Clean shutdown with CTRL+C
 
-## Anforderungen
+## Requirements
 
-- Windows PowerShell 5.1 oder höher, PowerShell 7+ wird empfohlen
-- Administratorrechte für die anfängliche Installation des AudioDeviceCmdlets-Moduls
-- Windows 10/11 kompatible Audiogeräte
+- Windows PowerShell 5.1 or higher, PowerShell 7+ recommended
+- Administrator rights for initial installation of AudioDeviceCmdlets module
+- Windows 10/11 compatible audio devices
 
 ## Installation
 
-1. Laden Sie den gesamten Projektordner herunter.
-2. Stellen Sie sicher, dass die Ausführung von PowerShell-Skripten erlaubt ist:
+1. Download the entire project folder
+2. Ensure PowerShell script execution is allowed:
    ```powershell
    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
    ```
-3. Das erforderliche AudioDeviceCmdlets-Modul wird beim ersten Start automatisch installiert.
+3. The required AudioDeviceCmdlets module will be installed automatically on first launch
 
-## Ersteinrichtung
+## First-Time Setup
 
-1. Starten Sie das Skript `ir-audio-switch.ps1`.
-2. Beim ersten Start werden Sie aufgefordert:
-   - Wählen Sie Ihr Standard-Audiogerät
-   - Wählen Sie Ihr VR-Audiogerät
-3. Die Auswahl wird automatisch gespeichert.
+1. Start the script `ir-audio-switch.ps1`
+2. On first run, you will be prompted to:
+   - Select your default audio device
+   - Select your VR audio device
+3. The selection is automatically saved
 
-## Verwendung
+## Usage
 
-1. Starten Sie das Skript:
+1. Start the script:
    ```powershell
    .\ir-audio-switch.ps1
    ```
-2. Das Skript läuft im Hintergrund und überwacht iRacing:
-   - Wenn iRacing startet, wird automatisch auf das VR-Audiogerät umgeschaltet.
-   - Wenn iRacing geschlossen wird, wird wieder auf das Standard-Audiogerät umgeschaltet.
-3. Beenden Sie das Skript mit CTRL+C.
+2. The script runs in the background and monitors iRacing:
+   - When iRacing starts, it automatically switches to the VR audio device
+   - When iRacing closes, it switches back to the default audio device
+3. Exit the script with CTRL+C
 
-## Konfiguration
+## Configuration
 
-Die Konfiguration wird in `ir-audio-switch.cfg.json` gespeichert und enthält:
-- Standard-Audiogerät (`defaultDevice`)
-- VR-Audiogerät (`vrDevice`)
-- Maximale Anzahl von Protokollzeilen (`maxLogLines`)
+The configuration is stored in `ir-audio-switch.cfg.json` and contains:
+- Default audio device (`defaultDevice`)
+- VR audio device (`vrDevice`)
+- Maximum number of log lines (`maxLogLines`)
 
-### Parameter
+### Parameters
 
-Das Skript akzeptiert die folgenden Parameter:
-- `-LogFile`: Pfad zur Protokolldatei (Standard: ir-audio-switch.log im Skriptverzeichnis)
-- `-MaxLogLines`: Maximale Anzahl von Protokollzeilen (Standard: 42)
+The script accepts the following parameters:
+- `-LogFile`: Path to the log file (default: ir-audio-switch.log in script directory)
+- `-MaxLogLines`: Maximum number of log lines (default: 42)
 
-Beispiel:
+Example:
 
 ```powershell
 .\ir-audio-switch.ps1 -LogFile "C:\path\to\logfile.log" -MaxLogLines 100
 ```
 
-## Konfigurationsbeispiele
+## Configuration Examples
 
-Hier sind einige Beispielkonfigurationen für `ir-audio-switch.cfg.json`:
+Here are some example configurations for `ir-audio-switch.cfg.json`:
 
 ```json
 {
   "defaultDevice": "Speakers (Realtek High Definition Audio)",
   "vrDevice": "Headphones (Oculus Virtual Audio Device)",
-  "maxLogLines": 42
+  "maxLogLines": 100
 }
 ```
 
-## Fehlerbehebung
+## Troubleshooting
 
-Wenn Sie auf Probleme stoßen, versuchen Sie die folgenden Schritte:
+If you encounter any issues, try the following steps:
 
-1. Stellen Sie sicher, dass Ihre Audiogeräte ordnungsgemäß angeschlossen und von Windows erkannt werden.
-2. Überprüfen Sie die Protokolldatei auf Fehlermeldungen.
-3. Stellen Sie sicher, dass Sie die erforderlichen Berechtigungen zum Ausführen des Skripts und zum Ändern der Audiogeräte haben.
-4. Führen Sie die Ersteinrichtung erneut durch, wenn Sie Ihre Audiogeräte geändert haben.
+1. Ensure that your audio devices are properly connected and recognized by Windows.
+2. Check the log file for any error messages.
+3. Make sure you have the necessary permissions to run the script and change audio devices.
+4. Re-run the first-time setup if you have changed your audio devices.
 
-## Lizenzierung
+## Licensing
 
-Dieses Projekt ist unter der MIT-Lizenz lizenziert. Weitere Details finden Sie in der Datei `LICENSE`.
+This project is licensed under the MIT License. See the `LICENSE` file for more details.
