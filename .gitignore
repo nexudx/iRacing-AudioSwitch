@@ -1,5 +1,2 @@
-# Log files
 *.log
-
-# Configuration files
 *.cfg.json
