@@ -27,11 +27,8 @@ function Update-Log {
         [int]$maxLines
     )
     if (Test-Path $logFilePath) {
-        $logContent = @(Get-Content $logFilePath)
-        if ($logContent.Count -gt $maxLines) {
-            $trimmedContent = $logContent[-$maxLines..-1]
-            Set-Content -Path $logFilePath -Value $trimmedContent
-        }
+        $logContent = Get-Content -Path $logFilePath -Tail $maxLines
+        Set-Content -Path $logFilePath -Value $logContent
     }
 }
 
