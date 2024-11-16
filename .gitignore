@@ -3,12 +3,3 @@
 
 # Configuration files
 *.cfg.json
-
-# PowerShell specific
-*.ps1xml
-*.psm1
-*.psd1
-
-# Backup files
-*.bak
-*.tmp
