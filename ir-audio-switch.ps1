@@ -44,16 +44,25 @@ function Write-Log {
     )
     try {
         Update-Log -logFilePath $LogFile -maxLines $MaxLogLines
-        $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-        $logMessage = "[$timestamp] [$Level] [$ScriptBlock] $Message"
-        $consoleMessage = "[$Level] $Message"
+        $timestamp = Get-Date -Format "HH:mm:ss"
+        $logMessage = "[$(Get-Date -Format "yyyy-MM-dd HH:mm:ss")] [$Level] [$ScriptBlock] $Message"
         
-        switch ($Level) {
-            'Warning' { Write-Host $consoleMessage -ForegroundColor Yellow }
-            'Error'   { Write-Host $consoleMessage -ForegroundColor Red }
-            'Debug'   { if ($VerbosePreference -eq 'Continue') { Write-Host $consoleMessage -ForegroundColor Gray } }
-            default   { Write-Host $consoleMessage -ForegroundColor Green }
+        $consoleMessage = "[{0}] [{1,-7}] {2}" -f $timestamp, $Level, $Message
+        
+        $LevelColors = @{
+            'Info'    = 'White'
+            'Warning' = 'Yellow'
+            'Error'   = 'Red'
+            'Debug'   = 'Gray'
         }
+        $color = $LevelColors[$Level]
+        
+        if ($Level -eq 'Debug' -and $VerbosePreference -ne 'Continue') {
+            # Do not output Debug messages if VerbosePreference is not 'Continue'
+        } else {
+            Write-Host $consoleMessage -ForegroundColor $color
+        }
+        
         Add-Content -Path $LogFile -Value $logMessage
     } catch {
         Write-Host "Failed to write log: $_" -ForegroundColor Red
@@ -118,11 +127,48 @@ function Save-Configuration {
     Write-Log "Configuration saved with MaxLogLines: $maxLines"
 }
 
-function Select-AudioDevice {
-    param ([string]$prompt)
+function Initialize-DeviceConfiguration {
     $devices = Get-AudioDevice -List | Where-Object { $_.Type -eq 'Playback' }
-    $selectedDevice = $devices | Out-GridView -Title $prompt -OutputMode Single
-    return $selectedDevice.Name
+    
+    Write-Log "Starting initial device configuration..."
+    Write-Host ""
+    Write-Host "Available Playback Devices:" -ForegroundColor Cyan
+    Write-Host "----------------------------------------" -ForegroundColor Cyan
+    
+    for ($i = 0; $i -lt $devices.Count; $i++) {
+        $isDefault = if ($devices[$i].Default) { "(Default)" } else { "" }
+        Write-Host ("[{0}] {1} {2}" -f $i, $devices[$i].Name, $isDefault)
+    }
+    
+    Write-Host ""
+    
+    do {
+        Write-Host "Select default device number [0-$($devices.Count - 1)]: " -NoNewline
+        $defaultSelection = Read-Host
+        if ($defaultSelection -match '^\d+$' -and [int]$defaultSelection -ge 0 -and [int]$defaultSelection -lt $devices.Count) {
+            $defaultDevice = $devices[[int]$defaultSelection].Name
+        } else {
+            Write-Host "Invalid selection, try again." -ForegroundColor Red
+        }
+    } while (-not $defaultDevice)
+    Write-Log "Selected default device: $defaultDevice"
+    
+    do {
+        Write-Host "Select VR device number [0-$($devices.Count - 1)]: " -NoNewline
+        $vrSelection = Read-Host
+        if ($vrSelection -match '^\d+$' -and [int]$vrSelection -ge 0 -and [int]$vrSelection -lt $devices.Count) {
+            $vrDevice = $devices[[int]$vrSelection].Name
+        } else {
+            Write-Host "Invalid selection, try again." -ForegroundColor Red
+        }
+    } while (-not $vrDevice)
+    Write-Log "Selected VR device: $vrDevice"
+    
+    Save-Configuration -defaultDevice $defaultDevice -vrDevice $vrDevice
+    return @{
+        defaultDevice = $defaultDevice
+        vrDevice = $vrDevice
+    }
 }
 
 function Set-DefaultAudioDevice {
@@ -163,55 +209,6 @@ function Set-DefaultAudioDevice {
         }
     }
     return $false
-}
-
-function Initialize-DeviceConfiguration {
-    $devices = Get-AudioDevice -List | Where-Object { $_.Type -eq 'Playback' }
-    
-    Write-Log "Starting initial device configuration..."
-    Write-Log "Available playback devices:"
-    foreach ($device in $devices) {
-        $isDefault = $device.Default ? " (Default)" : ""
-        Write-Log "- $($device.Name)$isDefault"
-    }
-
-    Clear-Host
-    Write-Host "Audio Device Selection" -ForegroundColor Cyan
-    Write-Host "Select your default and VR audio devices:" -ForegroundColor Yellow
-    Write-Host ""
-    
-    for ($i = 0; $i -lt $devices.Count; $i++) {
-        $prefix = $devices[$i].Default ? "*" : " "
-        Write-Host "$prefix$i. $($devices[$i].Name)"
-    }
-    
-    do {
-        Write-Host "`nSelect default device number [0-$($devices.Count - 1)]: " -NoNewline
-        $defaultSelection = Read-Host
-        if ($defaultSelection -match '^\d+$' -and [int]$defaultSelection -ge 0 -and [int]$defaultSelection -lt $devices.Count) {
-            $defaultDevice = $devices[[int]$defaultSelection].Name
-        } else {
-            Write-Host "Invalid selection, try again." -ForegroundColor Red
-        }
-    } while (-not $defaultDevice)
-    Write-Log "Selected default device: $defaultDevice"
-    
-    do {
-        Write-Host "`nSelect VR device number [0-$($devices.Count - 1)]: " -NoNewline
-        $vrSelection = Read-Host
-        if ($vrSelection -match '^\d+$' -and [int]$vrSelection -ge 0 -and [int]$vrSelection -lt $devices.Count) {
-            $vrDevice = $devices[[int]$vrSelection].Name
-        } else {
-            Write-Host "Invalid selection, try again." -ForegroundColor Red
-        }
-    } while (-not $vrDevice)
-    Write-Log "Selected VR device: $vrDevice"
-    
-    Save-Configuration -defaultDevice $defaultDevice -vrDevice $vrDevice
-    return @{
-        defaultDevice = $defaultDevice
-        vrDevice = $vrDevice
-    }
 }
 
 function Invoke-Cleanup {
@@ -261,6 +258,12 @@ function Watch-IRacingProcess {
                 
                 $switchAttempts = 0
                 $lastState = $currentState
+                
+                if ($currentState) {
+                    Write-Log "Switched to VR device: $VRDevice"
+                } else {
+                    Write-Log "Switched to default device: $DefaultDevice"
+                }
             }
             
             Start-Sleep -Milliseconds 250
@@ -273,6 +276,11 @@ function Watch-IRacingProcess {
         Invoke-Cleanup -DefaultDevice $DefaultDevice
     }
 }
+
+# Output script header
+Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host "      iRacing Audio Device Switcher       " -ForegroundColor Cyan
+Write-Host "==========================================" -ForegroundColor Cyan
 
 try {
     if (-not (Get-Module -ListAvailable -Name AudioDeviceCmdlets)) {
