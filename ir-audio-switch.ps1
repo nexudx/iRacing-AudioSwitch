@@ -13,7 +13,6 @@ $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $PSDefaultParameterValues['*:Encoding'] = 'utf8'
 
-# Kompatibilität mit PowerShell 7+ sicherstellen
 if ($PSVersionTable.PSVersion.Major -ge 7) {
     $PSDefaultParameterValues['*:Encoding'] = 'utf8'
 }
@@ -42,20 +41,22 @@ function Write-Log {
         [ValidateSet('Info','Warning','Error','Debug')][string]$Level = 'Info',
         [string]$ScriptBlock = $MyInvocation.ScriptLineNumber
     )
-    # Hinzufügen eines Kommentars zur Erklärung der Logik
-    # Diese Funktion schreibt eine Nachricht in die Protokolldatei und auf die Konsole
-    Update-Log -logFilePath $LogFile -maxLines $MaxLogLines
-    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $logMessage = "[$timestamp] [$Level] [$ScriptBlock] $Message"
-    $consoleMessage = "[$Level] $Message"
-    
-    switch ($Level) {
-        'Warning' { Write-Host $consoleMessage -ForegroundColor Yellow }
-        'Error'   { Write-Host $consoleMessage -ForegroundColor Red }
-        'Debug'   { if ($VerbosePreference -eq 'Continue') { Write-Host $consoleMessage -ForegroundColor Gray } }
-        default   { Write-Host $consoleMessage -ForegroundColor Green }
+    try {
+        Update-Log -logFilePath $LogFile -maxLines $MaxLogLines
+        $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+        $logMessage = "[$timestamp] [$Level] [$ScriptBlock] $Message"
+        $consoleMessage = "[$Level] $Message"
+        
+        switch ($Level) {
+            'Warning' { Write-Host $consoleMessage -ForegroundColor Yellow }
+            'Error'   { Write-Host $consoleMessage -ForegroundColor Red }
+            'Debug'   { if ($VerbosePreference -eq 'Continue') { Write-Host $consoleMessage -ForegroundColor Gray } }
+            default   { Write-Host $consoleMessage -ForegroundColor Green }
+        }
+        Add-Content -Path $LogFile -Value $logMessage
+    } catch {
+        Write-Host "Failed to write log: $_" -ForegroundColor Red
     }
-    Add-Content -Path $LogFile -Value $logMessage
 }
 
 if (-not (Get-Module -ListAvailable -Name AudioDeviceCmdlets)) {
@@ -106,8 +107,6 @@ function Save-Configuration {
         [string]$vrDevice,
         [int]$maxLines = $MaxLogLines
     )
-    # Hinzufügen eines Kommentars zur Erklärung der Logik
-    # Diese Funktion speichert die Konfiguration in einer JSON-Datei
     @{ 
         defaultDevice = $defaultDevice
         vrDevice = $vrDevice 
@@ -129,8 +128,6 @@ function Set-DefaultAudioDevice {
         [int]$retryCount = 3,
         [int]$retryDelay = 2000
     )
-    # Hinzufügen eines Kommentars zur Erklärung der Logik
-    # Diese Funktion setzt das Standard-Audiogerät mit einer Retry-Logik
     for ($i = 1; $i -le $retryCount; $i++) {
         try {
             $audioDevice = Get-AudioDevice -List | Where-Object { $_.Name -eq $deviceName }
@@ -153,8 +150,7 @@ function Set-DefaultAudioDevice {
             } else {
                 Write-Log "Audio device '$deviceName' not found! (Attempt $i/$retryCount)" -Level Warning
             }
-        }
-        catch {
+        } catch {
             Write-Log "Error setting audio device: $_ (Attempt $i/$retryCount)" -Level Warning
             Start-Sleep -Milliseconds $retryDelay
         }
@@ -225,14 +221,12 @@ function Invoke-Cleanup {
     Write-Log "Cleanup completed"
 }
 
-# Optimierung der Schleifen und Abfragen
 function Watch-IRacingProcess {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$DefaultDevice,
         [Parameter(Mandatory)][string]$VRDevice
     )
-    # Diese Funktion überwacht den iRacing-Prozess und wechselt die Audiogeräte entsprechend
     try {
         $activityMessage = "Monitoring iRacing Process"
         Write-Progress -Activity $activityMessage -Status "Initializing..." -PercentComplete 0
@@ -287,12 +281,10 @@ function Watch-IRacingProcess {
             
             Start-Sleep -Milliseconds 250
         }
-    }
-    catch {
+    } catch {
         Write-Log "Critical error in process monitoring: $_" -Level Error -ScriptBlock $MyInvocation.ScriptLineNumber
         throw
-    }
-    finally {
+    } finally {
         Write-Progress -Activity $activityMessage -Status "Cleaning up..." -Completed
         Get-EventSubscriber | Unregister-Event
         Invoke-Cleanup -DefaultDevice $DefaultDevice
@@ -300,7 +292,6 @@ function Watch-IRacingProcess {
 }
 
 try {
-    # Hauptlogik des Skripts, die die Konfiguration lädt und den Überwachungsprozess startet
     $config = Get-SavedConfiguration
     if ($null -eq $config) {
         $config = Initialize-DeviceConfiguration
@@ -310,9 +301,7 @@ try {
     Write-Log "Default device: $($config.defaultDevice)"
     Write-Log "VR device: $($config.vrDevice)"
     Watch-IRacingProcess -DefaultDevice $config.defaultDevice -VRDevice $config.vrDevice
-}
-catch {
-    # Fehlerbehandlung und Aufräumlogik
+} catch {
     Write-Log "Critical error: $_" -Level Error
     if ($null -ne $config -and $null -ne $config.defaultDevice) {
         Invoke-Cleanup -DefaultDevice $config.defaultDevice
