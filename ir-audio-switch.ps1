@@ -13,6 +13,11 @@ $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $PSDefaultParameterValues['*:Encoding'] = 'utf8'
 
+# Kompatibilität mit PowerShell 7+ sicherstellen
+if ($PSVersionTable.PSVersion.Major -ge 7) {
+    $PSDefaultParameterValues['*:Encoding'] = 'utf8'
+}
+
 $configPath = Join-Path $PSScriptRoot "ir-audio-switch.cfg.json"
 $script:exitRequested = $false
 
@@ -37,6 +42,8 @@ function Write-Log {
         [ValidateSet('Info','Warning','Error','Debug')][string]$Level = 'Info',
         [string]$ScriptBlock = $MyInvocation.ScriptLineNumber
     )
+    # Hinzufügen eines Kommentars zur Erklärung der Logik
+    # Diese Funktion schreibt eine Nachricht in die Protokolldatei und auf die Konsole
     Update-Log -logFilePath $LogFile -maxLines $MaxLogLines
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     $logMessage = "[$timestamp] [$Level] [$ScriptBlock] $Message"
@@ -99,6 +106,8 @@ function Save-Configuration {
         [string]$vrDevice,
         [int]$maxLines = $MaxLogLines
     )
+    # Hinzufügen eines Kommentars zur Erklärung der Logik
+    # Diese Funktion speichert die Konfiguration in einer JSON-Datei
     @{ 
         defaultDevice = $defaultDevice
         vrDevice = $vrDevice 
@@ -120,7 +129,8 @@ function Set-DefaultAudioDevice {
         [int]$retryCount = 3,
         [int]$retryDelay = 2000
     )
-    
+    # Hinzufügen eines Kommentars zur Erklärung der Logik
+    # Diese Funktion setzt das Standard-Audiogerät mit einer Retry-Logik
     for ($i = 1; $i -le $retryCount; $i++) {
         try {
             $audioDevice = Get-AudioDevice -List | Where-Object { $_.Name -eq $deviceName }
@@ -221,7 +231,8 @@ function Watch-IRacingProcess {
         [Parameter(Mandatory)][string]$DefaultDevice,
         [Parameter(Mandatory)][string]$VRDevice
     )
-    
+    # Hinzufügen eines Kommentars zur Erklärung der Logik
+    # Diese Funktion überwacht den iRacing-Prozess und wechselt die Audiogeräte entsprechend
     try {
         $activityMessage = "Monitoring iRacing Process"
         Write-Progress -Activity $activityMessage -Status "Initializing..." -PercentComplete 0
@@ -289,6 +300,7 @@ function Watch-IRacingProcess {
 }
 
 try {
+    # Hauptlogik des Skripts, die die Konfiguration lädt und den Überwachungsprozess startet
     $config = Get-SavedConfiguration
     if ($null -eq $config) {
         $config = Initialize-DeviceConfiguration
@@ -300,6 +312,7 @@ try {
     Watch-IRacingProcess -DefaultDevice $config.defaultDevice -VRDevice $config.vrDevice
 }
 catch {
+    # Fehlerbehandlung und Aufräumlogik
     Write-Log "Critical error: $_" -Level Error
     if ($null -ne $config -and $null -ne $config.defaultDevice) {
         Invoke-Cleanup -DefaultDevice $config.defaultDevice
