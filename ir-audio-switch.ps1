@@ -113,11 +113,15 @@ function Save-Configuration {
     param (
         [string]$defaultDevice, 
         [string]$vrDevice,
+        [string]$defaultMic,      # Neu hinzugefügt
+        [string]$vrMic,           # Neu hinzugefügt
         [int]$maxLines = $MaxLogLines
     )
     @{ 
         defaultDevice = $defaultDevice
         vrDevice = $vrDevice 
+        defaultMic = $defaultMic      # Neu hinzugefügt
+        vrMic = $vrMic                # Neu hinzugefügt
         maxLogLines = $maxLines
     } | ConvertTo-Json | Set-Content -Path $configPath -Encoding UTF8
     Write-Log "Configuration saved with MaxLogLines: $maxLines"
@@ -125,6 +129,7 @@ function Save-Configuration {
 
 function Initialize-DeviceConfiguration {
     $devices = Get-AudioDevice -List | Where-Object { $_.Type -eq 'Playback' }
+    $mics = Get-AudioDevice -List | Where-Object { $_.Type -eq 'Recording' }
     
     Write-Log "Starting initial device configuration..."
     Write-Host ""
@@ -160,10 +165,44 @@ function Initialize-DeviceConfiguration {
     } while (-not $vrDevice)
     Write-Log "Selected VR device: $vrDevice"
     
-    Save-Configuration -defaultDevice $defaultDevice -vrDevice $vrDevice
+    Write-Host ""
+    Write-Host "Available Recording Devices:" -ForegroundColor Cyan
+    Write-Host "----------------------------------------" -ForegroundColor Cyan
+    for ($i = 0; $i -lt $mics.Count; $i++) {
+        $isDefault = if ($mics[$i].Default) { "(Default)" } else { "" }
+        Write-Host ("[{0}] {1} {2}" -f $i, $mics[$i].Name, $isDefault)
+    }
+
+    # Auswahl des Standardmikrofons
+    do {
+        Write-Host "Select default microphone number [0-$($mics.Count - 1)]: " -NoNewline
+        $defaultMicSelection = Read-Host
+        if ($defaultMicSelection -match '^\d+$' -and [int]$defaultMicSelection -ge 0 -and [int]$defaultMicSelection -lt $mics.Count) {
+            $defaultMic = $mics[[int]$defaultMicSelection].Name
+        } else {
+            Write-Host "Invalid selection, try again." -ForegroundColor Red
+        }
+    } while (-not $defaultMic)
+    Write-Log "Selected default microphone: $defaultMic"
+
+    # Auswahl des VR-Mikrofons
+    do {
+        Write-Host "Select VR microphone number [0-$($mics.Count - 1)]: " -NoNewline
+        $vrMicSelection = Read-Host
+        if ($vrMicSelection -match '^\d+$' -and [int]$vrSelection -ge 0 -and [int]$vrMicSelection -lt $mics.Count) {
+            $vrMic = $mics[[int]$vrMicSelection].Name
+        } else {
+            Write-Host "Invalid selection, try again." -ForegroundColor Red
+        }
+    } while (-not $vrMic)
+    Write-Log "Selected VR microphone: $vrMic"
+
+    Save-Configuration -defaultDevice $defaultDevice -vrDevice $vrDevice -defaultMic $defaultMic -vrMic $vrMic
     return @{
         defaultDevice = $defaultDevice
         vrDevice = $vrDevice
+        defaultMic = $defaultMic      # Neu hinzugefügt
+        vrMic = $vrMic                # Neu hinzugefügt
     }
 }
 
@@ -171,49 +210,96 @@ function Set-DefaultAudioDevice {
     [OutputType([bool])]
     param(
         [Parameter(Mandatory)][string]$deviceName,
+        [Parameter(Mandatory)][string]$micName,    # Neu hinzugefügt
         [int]$retryCount = 2,
         [int]$retryDelay = 1000
     )
     
+    $success = $true  # Variable zur Überprüfung, ob alle Wechsel erfolgreich waren
+
+    # Umschalten des Wiedergabegeräts
     $currentDefault = Get-AudioDevice -Playback
-    if ($currentDefault.Name -eq $deviceName) {
-        Write-Log "Audio device '$deviceName' already active" -Level Debug
-        return $true
-    }
-    
-    for ($i = 1; $i -le $retryCount; $i++) {
-        try {
-            $audioDevice = Get-AudioDevice -List | 
-                Where-Object { $_.Name -eq $deviceName -and $_.Type -eq 'Playback' } |
-                Select-Object -First 1
-                
-            if (-not $audioDevice) {
-                Write-Log "Device not found: $deviceName (Attempt $i/$retryCount)" -Level Warning
-                continue
+    if ($currentDefault.Name -ne $deviceName) {
+        for ($i = 1; $i -le $retryCount; $i++) {
+            try {
+                $audioDevice = Get-AudioDevice -List |
+                    Where-Object { $_.Name -eq $deviceName -and $_.Type -eq 'Playback' } |
+                    Select-Object -First 1
+
+                if (-not $audioDevice) {
+                    Write-Log "Device not found: $deviceName (Attempt $i/$retryCount)" -Level Warning
+                    continue
+                }
+
+                Set-AudioDevice -ID $audioDevice.ID
+                Start-Sleep -Milliseconds 250
+
+                if ((Get-AudioDevice -Playback).Name -eq $deviceName) {
+                    Write-Log "Switched to: $deviceName"
+                    break
+                }
+            } catch {
+                Write-Log "Switch failed: $_ (Attempt $i/$retryCount)" -Level Warning
+                Start-Sleep -Milliseconds $retryDelay
             }
-            
-            Set-AudioDevice -ID $audioDevice.ID
-            Start-Sleep -Milliseconds 250
-            
-            if ((Get-AudioDevice -Playback).Name -eq $deviceName) {
-                Write-Log "Switched to: $deviceName"
-                return $true
-            }
-        } catch {
-            Write-Log "Switch failed: $_ (Attempt $i/$retryCount)" -Level Warning
-            Start-Sleep -Milliseconds $retryDelay
         }
+
+        # Überprüfen, ob der Wechsel erfolgreich war
+        if ((Get-AudioDevice -Playback).Name -ne $deviceName) {
+            Write-Log "Failed to switch playback device to: $deviceName" -Level Error
+            $success = $false
+        }
+    } else {
+        Write-Log "Audio device '$deviceName' already active" -Level Debug
     }
-    return $false
+
+    # Umschalten des Aufnahmegeräts
+    $currentDefaultMic = Get-AudioDevice -Recording
+    if ($currentDefaultMic.Name -ne $micName) {
+        for ($i = 1; $i -le $retryCount; $i++) {
+            try {
+                $micDevice = Get-AudioDevice -List |
+                    Where-Object { $_.Name -eq $micName -and $_.Type -eq 'Recording' } |
+                    Select-Object -First 1
+
+                if (-not $micDevice) {
+                    Write-Log "Microphone not found: $micName (Attempt $i/$retryCount)" -Level Warning
+                    continue
+                }
+
+                Set-AudioDevice -ID $micDevice.ID
+                Start-Sleep -Milliseconds 250
+
+                if ((Get-AudioDevice -Recording).Name -eq $micName) {
+                    Write-Log "Switched microphone to: $micName"
+                    break
+                }
+            } catch {
+                Write-Log "Microphone switch failed: $_ (Attempt $i/$retryCount)" -Level Warning
+                Start-Sleep -Milliseconds $retryDelay
+            }
+        }
+
+        # Überprüfen, ob der Wechsel erfolgreich war
+        if ((Get-AudioDevice -Recording).Name -ne $micName) {
+            Write-Log "Failed to switch microphone to: $micName" -Level Error
+            $success = $false
+        }
+    } else {
+        Write-Log "Microphone '$micName' already active" -Level Debug
+    }
+
+    return $success
 }
 
 function Invoke-Cleanup {
     param(
-        [string]$DefaultDevice
+        [string]$DefaultDevice,
+        [string]$DefaultMic    # Neu hinzugefügt
     )
     Write-Log "Shutting down Audio Switcher..."
     
-    if (-not (Set-DefaultAudioDevice $DefaultDevice)) {
+    if (-not (Set-DefaultAudioDevice -deviceName $DefaultDevice -micName $DefaultMic)) {
         Write-Log "Failed to restore default audio device!" -Level Error
     }
     
@@ -224,7 +310,9 @@ function Watch-IRacingProcess {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$DefaultDevice,
-        [Parameter(Mandatory)][string]$VRDevice
+        [Parameter(Mandatory)][string]$VRDevice,
+        [Parameter(Mandatory)][string]$DefaultMic,   # Neu hinzugefügt
+        [Parameter(Mandatory)][string]$VRMic         # Neu hinzugefügt
     )
     
     try {
@@ -241,9 +329,15 @@ function Watch-IRacingProcess {
             $currentState = [bool](Get-Process -Name $processName -ErrorAction SilentlyContinue)
             
             if ($currentState -ne $lastState) {
-                $targetDevice = if ($currentState) { $VRDevice } else { $DefaultDevice }
-                
-                if (-not (Set-DefaultAudioDevice $targetDevice)) {
+                if ($currentState) {
+                    $targetDevice = $VRDevice
+                    $targetMic = $VRMic             # Neu hinzugefügt
+                } else {
+                    $targetDevice = $DefaultDevice
+                    $targetMic = $DefaultMic        # Neu hinzugefügt
+                }
+
+                if (-not (Set-DefaultAudioDevice -deviceName $targetDevice -micName $targetMic)) {
                     $switchAttempts++ 
                     if ($switchAttempts -gt 3) {
                         throw "Multiple device switch failures"
@@ -269,7 +363,7 @@ function Watch-IRacingProcess {
         throw
     } finally {
         Get-EventSubscriber | Unregister-Event
-        Invoke-Cleanup -DefaultDevice $DefaultDevice
+        Invoke-Cleanup -DefaultDevice $DefaultDevice -DefaultMic $DefaultMic   # Geändert
     }
 }
 
@@ -288,11 +382,13 @@ try {
     Write-Log "Starting with configuration:"
     Write-Log "Default device: $($config.defaultDevice)"
     Write-Log "VR device: $($config.vrDevice)"
-    Watch-IRacingProcess -DefaultDevice $config.defaultDevice -VRDevice $config.vrDevice
+    Write-Log "Default microphone: $($config.defaultMic)"    # Neu hinzugefügt
+    Write-Log "VR microphone: $($config.vrMic)"              # Neu hinzugefügt
+    Watch-IRacingProcess -DefaultDevice $config.defaultDevice -VRDevice $config.vrDevice -DefaultMic $config.defaultMic -VRMic $config.vrMic
 } catch {
     Write-Log "Critical error: $_" -Level Error
-    if ($null -ne $config -and $null -ne $config.defaultDevice) {
-        Invoke-Cleanup -DefaultDevice $config.defaultDevice
+    if ($null -ne $config -and $null -ne $config.defaultDevice -and $null -ne $config.defaultMic) {
+        Invoke-Cleanup -DefaultDevice $config.defaultDevice -DefaultMic $config.defaultMic   # Geändert
     }
     exit 1
 }
