@@ -55,10 +55,10 @@ function Write-Log {
         $color = $LevelColors[$Level]
         
         if ($Level -eq 'Debug' -and $VerbosePreference -ne 'Continue') {
-        } else {
-            Write-Host $consoleMessage -ForegroundColor $color
+            return
         }
         
+        Write-Host $consoleMessage -ForegroundColor $color
         Add-Content -Path $LogFile -Value $logMessage
     } catch {
         Write-Host "Failed to write log: $_" -ForegroundColor Red
@@ -113,15 +113,15 @@ function Save-Configuration {
     param (
         [string]$defaultDevice, 
         [string]$vrDevice,
-        [string]$defaultMic,      # Neu hinzugefügt
-        [string]$vrMic,           # Neu hinzugefügt
+        [string]$defaultMic,
+        [string]$vrMic,
         [int]$maxLines = $MaxLogLines
     )
     @{ 
         defaultDevice = $defaultDevice
         vrDevice = $vrDevice 
-        defaultMic = $defaultMic      # Neu hinzugefügt
-        vrMic = $vrMic                # Neu hinzugefügt
+        defaultMic = $defaultMic
+        vrMic = $vrMic
         maxLogLines = $maxLines
     } | ConvertTo-Json | Set-Content -Path $configPath -Encoding UTF8
     Write-Log "Configuration saved with MaxLogLines: $maxLines"
@@ -173,7 +173,6 @@ function Initialize-DeviceConfiguration {
         Write-Host ("[{0}] {1} {2}" -f $i, $mics[$i].Name, $isDefault)
     }
 
-    # Auswahl des Standardmikrofons
     do {
         Write-Host "Select default microphone number [0-$($mics.Count - 1)]: " -NoNewline
         $defaultMicSelection = Read-Host
@@ -185,11 +184,10 @@ function Initialize-DeviceConfiguration {
     } while (-not $defaultMic)
     Write-Log "Selected default microphone: $defaultMic"
 
-    # Auswahl des VR-Mikrofons
     do {
         Write-Host "Select VR microphone number [0-$($mics.Count - 1)]: " -NoNewline
         $vrMicSelection = Read-Host
-        if ($vrMicSelection -match '^\d+$' -and [int]$vrSelection -ge 0 -and [int]$vrMicSelection -lt $mics.Count) {
+        if ($vrMicSelection -match '^\d+$' -and [int]$vrMicSelection -ge 0 -and [int]$vrMicSelection -lt $mics.Count) {
             $vrMic = $mics[[int]$vrMicSelection].Name
         } else {
             Write-Host "Invalid selection, try again." -ForegroundColor Red
@@ -201,8 +199,8 @@ function Initialize-DeviceConfiguration {
     return @{
         defaultDevice = $defaultDevice
         vrDevice = $vrDevice
-        defaultMic = $defaultMic      # Neu hinzugefügt
-        vrMic = $vrMic                # Neu hinzugefügt
+        defaultMic = $defaultMic
+        vrMic = $vrMic
     }
 }
 
@@ -210,14 +208,13 @@ function Set-DefaultAudioDevice {
     [OutputType([bool])]
     param(
         [Parameter(Mandatory)][string]$deviceName,
-        [Parameter(Mandatory)][string]$micName,    # Neu hinzugefügt
+        [Parameter(Mandatory)][string]$micName,
         [int]$retryCount = 2,
         [int]$retryDelay = 1000
     )
     
-    $success = $true  # Variable zur Überprüfung, ob alle Wechsel erfolgreich waren
+    $success = $true
 
-    # Umschalten des Wiedergabegeräts
     $currentDefault = Get-AudioDevice -Playback
     if ($currentDefault.Name -ne $deviceName) {
         for ($i = 1; $i -le $retryCount; $i++) {
@@ -244,7 +241,6 @@ function Set-DefaultAudioDevice {
             }
         }
 
-        # Überprüfen, ob der Wechsel erfolgreich war
         if ((Get-AudioDevice -Playback).Name -ne $deviceName) {
             Write-Log "Failed to switch playback device to: $deviceName" -Level Error
             $success = $false
@@ -253,7 +249,6 @@ function Set-DefaultAudioDevice {
         Write-Log "Audio device '$deviceName' already active" -Level Debug
     }
 
-    # Umschalten des Aufnahmegeräts
     $currentDefaultMic = Get-AudioDevice -Recording
     if ($currentDefaultMic.Name -ne $micName) {
         for ($i = 1; $i -le $retryCount; $i++) {
@@ -280,7 +275,6 @@ function Set-DefaultAudioDevice {
             }
         }
 
-        # Überprüfen, ob der Wechsel erfolgreich war
         if ((Get-AudioDevice -Recording).Name -ne $micName) {
             Write-Log "Failed to switch microphone to: $micName" -Level Error
             $success = $false
@@ -295,7 +289,7 @@ function Set-DefaultAudioDevice {
 function Invoke-Cleanup {
     param(
         [string]$DefaultDevice,
-        [string]$DefaultMic    # Neu hinzugefügt
+        [string]$DefaultMic
     )
     Write-Log "Shutting down Audio Switcher..."
     
@@ -311,8 +305,8 @@ function Watch-IRacingProcess {
     param(
         [Parameter(Mandatory)][string]$DefaultDevice,
         [Parameter(Mandatory)][string]$VRDevice,
-        [Parameter(Mandatory)][string]$DefaultMic,   # Neu hinzugefügt
-        [Parameter(Mandatory)][string]$VRMic         # Neu hinzugefügt
+        [Parameter(Mandatory)][string]$DefaultMic,
+        [Parameter(Mandatory)][string]$VRMic
     )
     
     try {
@@ -331,10 +325,10 @@ function Watch-IRacingProcess {
             if ($currentState -ne $lastState) {
                 if ($currentState) {
                     $targetDevice = $VRDevice
-                    $targetMic = $VRMic             # Neu hinzugefügt
+                    $targetMic = $VRMic
                 } else {
                     $targetDevice = $DefaultDevice
-                    $targetMic = $DefaultMic        # Neu hinzugefügt
+                    $targetMic = $DefaultMic
                 }
 
                 if (-not (Set-DefaultAudioDevice -deviceName $targetDevice -micName $targetMic)) {
@@ -363,7 +357,7 @@ function Watch-IRacingProcess {
         throw
     } finally {
         Get-EventSubscriber | Unregister-Event
-        Invoke-Cleanup -DefaultDevice $DefaultDevice -DefaultMic $DefaultMic   # Geändert
+        Invoke-Cleanup -DefaultDevice $DefaultDevice -DefaultMic $DefaultMic
     }
 }
 
@@ -382,13 +376,13 @@ try {
     Write-Log "Starting with configuration:"
     Write-Log "Default device: $($config.defaultDevice)"
     Write-Log "VR device: $($config.vrDevice)"
-    Write-Log "Default microphone: $($config.defaultMic)"    # Neu hinzugefügt
-    Write-Log "VR microphone: $($config.vrMic)"              # Neu hinzugefügt
+    Write-Log "Default microphone: $($config.defaultMic)"
+    Write-Log "VR microphone: $($config.vrMic)"
     Watch-IRacingProcess -DefaultDevice $config.defaultDevice -VRDevice $config.vrDevice -DefaultMic $config.defaultMic -VRMic $config.vrMic
 } catch {
     Write-Log "Critical error: $_" -Level Error
     if ($null -ne $config -and $null -ne $config.defaultDevice -and $null -ne $config.defaultMic) {
-        Invoke-Cleanup -DefaultDevice $config.defaultDevice -DefaultMic $config.defaultMic   # Geändert
+        Invoke-Cleanup -DefaultDevice $config.defaultDevice -DefaultMic $config.defaultMic
     }
     exit 1
 }

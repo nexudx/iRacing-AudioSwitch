@@ -6,6 +6,7 @@ A PowerShell script for seamlessly managing audio output devices when launching 
 
 - Automatic detection of iRacing
 - Automatic switching between default and VR audio device
+- Automatic switching between default and VR microphone
 - Persistent configuration
 - Detailed logging with automatic log rotation
 - Fault-tolerant audio device switching with retry mechanism
@@ -34,6 +35,8 @@ A PowerShell script for seamlessly managing audio output devices when launching 
 2. On first run, you will be prompted to:
    - Select your default audio device.
    - Select your VR audio device.
+   - Select your default microphone.
+   - Select your VR microphone.
 3. The selection is automatically saved.
 
 ## Usage
@@ -43,8 +46,8 @@ A PowerShell script for seamlessly managing audio output devices when launching 
    .\ir-audio-switch.ps1
    ```
 2. The script runs in the background and monitors iRacing:
-   - When iRacing starts, it automatically switches to the VR audio device.
-   - When iRacing closes, it switches back to the default audio device.
+   - When iRacing starts, it automatically switches to the VR audio device and VR microphone.
+   - When iRacing closes, it switches back to the default audio device and default microphone.
 3. Exit the script with CTRL+C.
 
 ## Configuration
@@ -52,6 +55,8 @@ A PowerShell script for seamlessly managing audio output devices when launching 
 The configuration is stored in `ir-audio-switch.cfg.json` and contains:
 - Default audio device (`defaultDevice`)
 - VR audio device (`vrDevice`)
+- Default microphone (`defaultMic`)
+- VR microphone (`vrMic`)
 - Maximum number of log lines (`maxLogLines`)
 
 ### Parameters
@@ -74,6 +79,8 @@ Example configuration in `ir-audio-switch.cfg.json` for a typical VR racing setu
 {
   "defaultDevice": "Speakers (Realtek High Definition Audio)",
   "vrDevice": "Headphones (Oculus Virtual Audio Device)",
+  "defaultMic": "Microphone (Realtek High Definition Audio)",
+  "vrMic": "Microphone (Oculus Virtual Audio Device)",
   "maxLogLines": 100
 }
 ```
