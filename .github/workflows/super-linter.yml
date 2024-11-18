@@ -27,3 +27,6 @@ jobs:
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: "main"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_POWERSHELL: true
+          POWERSHELL_FILE_NAME: "*.ps1"
+          POWERSHELL_VERSION: "5.1"
