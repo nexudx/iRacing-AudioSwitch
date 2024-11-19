@@ -1,14 +1,14 @@
 # iRacing için Ses Aygıtı Değiştirici 🎧
 
 <div align="center">
-  <img src="./docs/static/img/audio_switcher_banner.jpg" alt="Ses Aygıtı Değiştirici Bannerı" width="100%" />
+  <img src="../static/img/audio_switcher_banner.jpg" alt="Ses Aygıtı Değiştirici Bannerı" width="100%" />
 </div>
 <div align="center">
   📖 Dokümantasyon | 🎯 Örnekler
 </div>
 
 🌍 README Çevirileri
-中文说明 | 日本語の説明 | 한국어 설명 | Français | Português | Türkçe | Русский | Español | Italiano | Deutsch
+[中文说明](README.cn.md) | [日本語の説明](README.ja.md) | [한국어 설명](README.ko.md) | [Français](README.fr.md) | [Português](README.ptbr.md) | [Türkçe](README.tr.md) | [Русский](README.ru.md) | [Español](README.es.md) | [Italiano](README.it.md) | [Deutsch](README.de.md)
 
 ✨ Özellikler
 - 🛠️ iRacing'in otomatik algılanması

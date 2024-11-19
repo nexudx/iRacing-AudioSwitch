@@ -1,11 +1,11 @@
 # Переключатель аудиоустройств для iRacing 🎧
 
 <div align="center">
-  <img src="./docs/static/img/audio_switcher_banner.jpg" alt="Баннер переключателя аудиоустройств" width="100%" />
+  <img src="../static/img/audio_switcher_banner.jpg" alt="Баннер переключателя аудиоустройств" width="100%" />
 </div>
 
 🌍 Переводы README
-[中文说明](./docs/translations/README.cn.md) | [日本語の説明](./docs/translations/README.ja.md) | [한국어 설명](./docs/translations/README.ko.md) | [Français](./docs/translations/README.fr.md) | [Português](./docs/translations/README.ptbr.md) | [Türkçe](./docs/translations/README.tr.md) | [Русский](./docs/translations/README.ru.md) | [Español](./docs/translations/README.es.md) | [Italiano](./docs/translations/README.it.md) | [Deutsch](./docs/translations/README.de.md)
+[中文说明](README.cn.md) | [日本語の説明](README.ja.md) | [한국어 설명](README.ko.md) | [Français](README.fr.md) | [Português](README.ptbr.md) | [Türkçe](README.tr.md) | [Русский](README.ru.md) | [Español](README.es.md) | [Italiano](README.it.md) | [Deutsch](README.de.md)
 
 ✨ Особенности
 - 🛠️ Автоматическое обнаружение iRacing
@@ -38,7 +38,7 @@
 2. При первом запуске вам будет предложено:
    - Выбрать аудиоустройство по умолчанию.
    - Выбрать VR аудиоустройство.
-   - Выбрать микрофон по умолчанию.
+   - Выбрать микро��он по умолчанию.
    - Выбрать VR микрофон.
 3. Выбор будет автоматически сохранен.
 
