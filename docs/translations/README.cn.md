@@ -5,7 +5,7 @@
 </div>
 
 🌍 README 翻译
-[中文说明](README.cn.md) | [日本語の説明](README.ja.md) | [한국어 설명](README.ko.md) | [Français](README.fr.md) | [Português](README.ptbr.md) | [Türkçe](README.tr.md) | [Русский](README.ru.md) | [Español](README.es.md) | [Italiano](README.it.md) | [Deutsch](README.de.md)
+[中文说明](./docs/translations/README.cn.md) | [日本語の説明](./docs/translations/README.ja.md) | [한국어 설명](./docs/translations/README.ko.md) | [Français](./docs/translations/README.fr.md) | [Português](./docs/translations/README.ptbr.md) | [Türkçe](./docs/translations/README.tr.md) | [Русский](./docs/translations/README.ru.md) | [Español](./docs/translations/README.es.md) | [Italiano](./docs/translations/README.it.md) | [Deutsch](./docs/translations/README.de.md)
 
 ✨ 功能
 - 🛠️ 自动检测 iRacing
@@ -92,7 +92,7 @@
 1. 确保您的音频设备已正确连接并被 Windows 识别。
 2. 检查日志文件中是否有任何错误信息。
 3. 确保您具有运行脚本和更改音频设备的必要权限。
-4. 如果您更改了音频设备，请重新运���首次设置。
+4. 如果您更改了音频设备，请重新运行首次设置。
 
 ## 许可证
 
