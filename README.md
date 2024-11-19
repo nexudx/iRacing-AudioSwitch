@@ -1,27 +1,31 @@
-# Audio Device Switcher for iRacing
+# Audio Device Switcher for iRacing 🎧
 
-A PowerShell script for seamlessly managing audio output devices when launching and exiting iRacing simulation software.
+<div align="center">
+  <img src="./docs/static/img/audio_switcher_banner.jpg" alt="Audio Device Switcher Banner" width="100%" />
+</div>
 
-## Features
+🌍 README Translations
+[中文说明](README.cn.md) | [日本語の説明](README.ja.md) | [한국어 설명](README.ko.md) | [Français](README.fr.md) | [Português](README.ptbr.md) | [Türkçe](README.tr.md) | [Русский](README.ru.md) | [Español](README.es.md) | [Italiano](README.it.md) | [Deutsch](README.de.md)
 
-- Automatic detection of iRacing
-- Automatic switching between default and VR audio device
-- Automatic switching between default and VR microphone
-- Persistent configuration
-- Detailed logging with automatic log rotation
-- Fault-tolerant audio device switching with retry mechanism
-- User-friendly first-time setup
-- Clean shutdown with CTRL+C
+✨ Features
+- 🛠️ Automatic detection of iRacing
+- 🔄 Automatic switching between default and VR audio device
+- 🎤 Automatic switching between default and VR microphone
+- 💾 Persistent configuration
+- 📜 Detailed logging with automatic log rotation
+- 🔄 Fault-tolerant audio device switching with retry mechanism
+- 👥 User-friendly first-time setup
+- 🛑 Clean shutdown with CTRL+C
 
-## Requirements
+🚀 Quick Start
 
+### Prerequisites
 - Windows PowerShell 5.1 or higher, PowerShell 7+ recommended
 - Administrator rights for initial installation of AudioDeviceCmdlets module
 - Windows 10/11 compatible audio devices
 - iRacing simulation software
 
-## Installation
-
+### Installation
 1. Download the entire project folder.
 2. Ensure PowerShell script execution is allowed:
    ```powershell
@@ -29,8 +33,7 @@ A PowerShell script for seamlessly managing audio output devices when launching 
    ```
 3. The required AudioDeviceCmdlets module will be installed automatically on first launch.
 
-## First-Time Setup
-
+### First-Time Setup
 1. Start the script `ir-audio-switch.ps1`.
 2. On first run, you will be prompted to:
    - Select your default audio device.
@@ -39,8 +42,7 @@ A PowerShell script for seamlessly managing audio output devices when launching 
    - Select your VR microphone.
 3. The selection is automatically saved.
 
-## Usage
-
+### Usage
 1. Start the script:
    ```powershell
    .\ir-audio-switch.ps1
@@ -50,8 +52,7 @@ A PowerShell script for seamlessly managing audio output devices when launching 
    - When iRacing closes, it switches back to the default audio device and default microphone.
 3. Exit the script with CTRL+C.
 
-## Configuration
-
+### Configuration
 The configuration is stored in `ir-audio-switch.cfg.json` and contains:
 - Default audio device (`defaultDevice`)
 - VR audio device (`vrDevice`)
@@ -60,7 +61,6 @@ The configuration is stored in `ir-audio-switch.cfg.json` and contains:
 - Maximum number of log lines (`maxLogLines`)
 
 ### Parameters
-
 The script accepts the following parameters:
 - `-LogFile`: Path to the log file (default: ir-audio-switch.log in script directory)
 - `-MaxLogLines`: Maximum number of lines to keep in the log file (default: 42, range: 10-10000)
