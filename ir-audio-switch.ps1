@@ -1,3 +1,30 @@
+<#
+.SYNOPSIS
+    Switches audio output and input devices based on whether iRacing is running.
+
+.DESCRIPTION
+    This script monitors the iRacing process and automatically switches between default and VR audio devices 
+    when iRacing starts or stops. It also handles microphone switching and provides persistent configuration, 
+    detailed logging, and robust error handling.
+
+.PARAMETER LogFile
+    Path to the log file. Defaults to 'ir-audio-switch.log' in the script directory.
+
+.PARAMETER MaxLogLines
+    Maximum number of lines to keep in the log file. Defaults to 42. Valid range is 10-10000.
+
+.EXAMPLE
+    .\ir-audio-switch.ps1
+    Starts the script with default settings.
+
+.EXAMPLE
+    .\ir-audio-switch.ps1 -LogFile "C:\path\to\logfile.log" -MaxLogLines 100
+    Starts the script with a custom log file path and maximum log lines.
+
+.NOTES
+    Requires the AudioDeviceCmdlets module. It will be installed automatically if not present.
+    Requires administrator rights for the initial installation of the module.
+#>
 [CmdletBinding()]
 param(
     [ValidateScript({
@@ -13,7 +40,7 @@ param(
     [int]$MaxLogLines = 42
 )
 
-Set-StrictMode -Version Latest
+Set-StrictMode -Version 5.1
 $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
@@ -21,6 +48,19 @@ $script:configPath = Join-Path $PSScriptRoot "ir-audio-switch.cfg.json"
 $script:exitRequested = $false
 $script:audioDeviceCache = @{}
 
+<#
+.SYNOPSIS
+    Updates the log file, keeping only the last specified lines.
+
+.DESCRIPTION
+    This function reads the log file, extracts the last 'maxLines' lines, and overwrites the file with the extracted content.
+
+.PARAMETER logFilePath
+    The path to the log file.
+
+.PARAMETER maxLines
+    The maximum number of lines to keep in the log file.
+#>
 function Update-Log {
     param (
         [string]$logFilePath,
@@ -32,6 +72,22 @@ function Update-Log {
     }
 }
 
+<#
+.SYNOPSIS
+    Writes a message to the log file and console.
+
+.DESCRIPTION
+    This function formats and writes a log message to the specified log file and displays it in the console with appropriate color coding.
+
+.PARAMETER Message
+    The message to log.
+
+.PARAMETER Level
+    The log level ('Info', 'Warning', 'Error', 'Debug'). Defaults to 'Info'.
+
+.PARAMETER ScriptBlock
+    The line number of the calling script block. Used for debugging.
+#>
 function Write-Log {
     [CmdletBinding()]
     param(
@@ -65,6 +121,19 @@ function Write-Log {
     }
 }
 
+<#
+.SYNOPSIS
+    Checks if an audio device exists.
+
+.DESCRIPTION
+    This function checks if a given audio device exists and caches the result to avoid redundant lookups.
+
+.PARAMETER deviceName
+    The name of the audio device to check.
+
+.OUTPUTS
+    [bool] True if the device exists, False otherwise.
+#>
 function Test-AudioDeviceExists {
     [OutputType([bool])]
     param ([string]$deviceName)
@@ -73,11 +142,22 @@ function Test-AudioDeviceExists {
         return $script:audioDeviceCache[$deviceName]
     }
     
-    $exists = [bool](Get-AudioDevice -List | Where-Object { $_.Name -eq $deviceName })
-    $script:audioDeviceCache[$deviceName] = $exists
+    $device = Get-AudioDevice -List | Where-Object { $_.Name -eq $deviceName }
+    $exists = [bool]$device
+    $script:audioDeviceCache[$deviceName] = $device # Cache the device object
     return $exists
 }
 
+<#
+.SYNOPSIS
+    Retrieves saved audio device configuration.
+
+.DESCRIPTION
+    This function loads and validates the saved audio device configuration from a JSON file.
+
+.OUTPUTS
+    [hashtable] The configuration hashtable, or $null if loading or validation fails.
+#>
 function Get-SavedConfiguration {
     if (Test-Path $configPath) {
         try {
@@ -87,17 +167,17 @@ function Get-SavedConfiguration {
                 $script:MaxLogLines = $config.maxLogLines
             }
             
-            $defaultDeviceExists = Test-AudioDeviceExists $config.defaultDevice
-            $vrDeviceExists = Test-AudioDeviceExists $config.vrDevice
+            $defaultDevice = Test-AudioDeviceExists $config.defaultDevice
+            $vrDevice = Test-AudioDeviceExists $config.vrDevice
             
-            if (-not $defaultDeviceExists) {
+            if (-not $defaultDevice) {
                 Write-Log "Default device '$($config.defaultDevice)' not found!" -Level Error
             }
-            if (-not $vrDeviceExists) {
+            if (-not $vrDevice) {
                 Write-Log "VR device '$($config.vrDevice)' not found!" -Level Error
             }
             
-            if ($defaultDeviceExists -and $vrDeviceExists) {
+            if ($defaultDevice -and $vrDevice) {
                 Write-Log "Configuration loaded successfully"
                 return $config
             }
@@ -109,6 +189,28 @@ function Get-SavedConfiguration {
     return $null
 }
 
+<#
+.SYNOPSIS
+    Saves the audio device configuration.
+
+.DESCRIPTION
+    This function saves the specified audio device configuration to a JSON file.
+
+.PARAMETER defaultDevice
+    The name of the default audio device.
+
+.PARAMETER vrDevice
+    The name of the VR audio device.
+
+.PARAMETER defaultMic
+    The name of the default microphone.
+
+.PARAMETER vrMic
+    The name of the VR microphone.
+
+.PARAMETER maxLines
+    The maximum number of lines to keep in the log file. Defaults to the current value of $MaxLogLines.
+#>
 function Save-Configuration {
     param (
         [string]$defaultDevice, 
@@ -127,6 +229,17 @@ function Save-Configuration {
     Write-Log "Configuration saved with MaxLogLines: $maxLines"
 }
 
+
+<#
+.SYNOPSIS
+    Initializes the audio device configuration.
+
+.DESCRIPTION
+    This function prompts the user to select default and VR audio devices and microphones, and saves the configuration.
+
+.OUTPUTS
+    [hashtable] The initialized configuration hashtable.
+#>
 function Initialize-DeviceConfiguration {
     $devices = Get-AudioDevice -List | Where-Object { $_.Type -eq 'Playback' }
     $mics = Get-AudioDevice -List | Where-Object { $_.Type -eq 'Recording' }
@@ -204,6 +317,28 @@ function Initialize-DeviceConfiguration {
     }
 }
 
+<#
+.SYNOPSIS
+    Sets the default audio device.
+
+.DESCRIPTION
+    Sets the default audio playback and recording devices.  Includes retry logic to handle temporary device unavailability.
+
+.PARAMETER deviceName
+    The name of the audio playback device to set as default.
+
+.PARAMETER micName
+    The name of the audio recording device to set as default.
+
+.PARAMETER retryCount
+    The number of times to retry setting the device.  Defaults to 2.
+
+.PARAMETER retryDelay
+    The delay in milliseconds between retry attempts. Defaults to 1000.
+
+.OUTPUTS
+    [bool] True if the device was set successfully, False otherwise.
+#>
 function Set-DefaultAudioDevice {
     [OutputType([bool])]
     param(
@@ -214,78 +349,97 @@ function Set-DefaultAudioDevice {
     )
     
     $success = $true
+    $deviceSet = $false
+    $micSet = $false
 
-    $currentDefault = Get-AudioDevice -Playback
-    if ($currentDefault.Name -ne $deviceName) {
-        for ($i = 1; $i -le $retryCount; $i++) {
+
+    for ($i = 1; $i -le $retryCount; $i++) {
+        if (-not $deviceSet) {
             try {
-                $audioDevice = Get-AudioDevice -List |
-                    Where-Object { $_.Name -eq $deviceName -and $_.Type -eq 'Playback' } |
-                    Select-Object -First 1
+                $currentDefault = Get-AudioDevice -Playback
+                if ($currentDefault.Name -ne $deviceName) {
+                    $audioDevice = Test-AudioDeviceExists $deviceName # Use cached device object if available
+                    if (-not $audioDevice) {
+                        Write-Log "Device not found: $deviceName (Attempt $i/$retryCount)" -Level Warning
+                        continue
+                    }
+                    Set-AudioDevice -ID $audioDevice.ID
+                    Start-Sleep -Milliseconds 250
 
-                if (-not $audioDevice) {
-                    Write-Log "Device not found: $deviceName (Attempt $i/$retryCount)" -Level Warning
-                    continue
+                    if ((Get-AudioDevice -Playback).Name -eq $deviceName) {
+                        Write-Log "Switched to: $deviceName"
+                        $deviceSet = $true
+                    }
                 }
-
-                Set-AudioDevice -ID $audioDevice.ID
-                Start-Sleep -Milliseconds 250
-
-                if ((Get-AudioDevice -Playback).Name -eq $deviceName) {
-                    Write-Log "Switched to: $deviceName"
-                    break
+                else {
+                    Write-Log "Audio device '$deviceName' already active" -Level Debug
+                    $deviceSet = $true
                 }
-            } catch {
+            }
+            catch {
                 Write-Log "Switch failed: $_ (Attempt $i/$retryCount)" -Level Warning
                 Start-Sleep -Milliseconds $retryDelay
             }
         }
 
-        if ((Get-AudioDevice -Playback).Name -ne $deviceName) {
-            Write-Log "Failed to switch playback device to: $deviceName" -Level Error
-            $success = $false
-        }
-    } else {
-        Write-Log "Audio device '$deviceName' already active" -Level Debug
-    }
-
-    $currentDefaultMic = Get-AudioDevice -Recording
-    if ($currentDefaultMic.Name -ne $micName) {
-        for ($i = 1; $i -le $retryCount; $i++) {
+        if (-not $micSet) {
             try {
-                $micDevice = Get-AudioDevice -List |
-                    Where-Object { $_.Name -eq $micName -and $_.Type -eq 'Recording' } |
-                    Select-Object -First 1
+                $currentDefaultMic = Get-AudioDevice -Recording
+                if ($currentDefaultMic.Name -ne $micName) {
+                    $micDevice = Test-AudioDeviceExists $micName # Use cached device object if available
+                    if (-not $micDevice) {
+                        Write-Log "Microphone not found: $micName (Attempt $i/$retryCount)" -Level Warning
+                        continue
+                    }
+                    Set-AudioDevice -ID $micDevice.ID
+                    Start-Sleep -Milliseconds 250
 
-                if (-not $micDevice) {
-                    Write-Log "Microphone not found: $micName (Attempt $i/$retryCount)" -Level Warning
-                    continue
+                    if ((Get-AudioDevice -Recording).Name -eq $micName) {
+                        Write-Log "Switched microphone to: $micName"
+                        $micSet = $true
+                    }
+                } else {
+                    Write-Log "Microphone '$micName' already active" -Level Debug
+                    $micSet = $true
                 }
-
-                Set-AudioDevice -ID $micDevice.ID
-                Start-Sleep -Milliseconds 250
-
-                if ((Get-AudioDevice -Recording).Name -eq $micName) {
-                    Write-Log "Switched microphone to: $micName"
-                    break
-                }
-            } catch {
+            }
+            catch {
                 Write-Log "Microphone switch failed: $_ (Attempt $i/$retryCount)" -Level Warning
                 Start-Sleep -Milliseconds $retryDelay
             }
         }
 
-        if ((Get-AudioDevice -Recording).Name -ne $micName) {
-            Write-Log "Failed to switch microphone to: $micName" -Level Error
-            $success = $false
+        if ($deviceSet -and $micSet) {
+            break
         }
-    } else {
-        Write-Log "Microphone '$micName' already active" -Level Debug
+    }
+
+    if (-not $deviceSet) {
+        Write-Log "Failed to switch playback device to: $deviceName" -Level Error
+        $success = $false
+    }
+
+    if (-not $micSet) {
+        Write-Log "Failed to switch microphone to: $micName" -Level Error
+        $success = $false
     }
 
     return $success
 }
 
+<#
+.SYNOPSIS
+    Performs cleanup actions before script exit.
+
+.DESCRIPTION
+    Restores the default audio devices and logs the cleanup process.
+
+.PARAMETER DefaultDevice
+    The name of the default playback device.
+
+.PARAMETER DefaultMic
+    The name of the default recording device.
+#>
 function Invoke-Cleanup {
     param(
         [string]$DefaultDevice,
@@ -300,6 +454,25 @@ function Invoke-Cleanup {
     Write-Log "Cleanup completed"
 }
 
+<#
+.SYNOPSIS
+    Watches the iRacing process and switches audio devices.
+
+.DESCRIPTION
+    Monitors the iRacing process and switches between default and VR audio devices when iRacing starts or stops.
+
+.PARAMETER DefaultDevice
+    The name of the default playback device.
+
+.PARAMETER VRDevice
+    The name of the VR playback device.
+
+.PARAMETER DefaultMic
+    The name of the default recording device.
+
+.PARAMETER VRMic
+    The name of the VR recording device.
+#>
 function Watch-IRacingProcess {
     [CmdletBinding()]
     param(
