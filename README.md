@@ -12,17 +12,19 @@
 - 🔄 Automatic switching between default and VR audio device
 - 🎤 Automatic switching between default and VR microphone
 - 💾 Persistent configuration
-- 📜 Detailed logging with automatic log rotation
+- 📜 Detailed logging
 - 🔄 Fault-tolerant audio device switching with retry mechanism
 - 👥 User-friendly first-time setup
 - 🛑 Clean shutdown with CTRL+C
+- ✨ Enhanced performance with audio device caching
+- 📝 Comprehensive comment-based help for better understanding and usage
 
 🚀 Quick Start
 
 ### Prerequisites
-- Windows PowerShell 5.1 or higher, PowerShell 7+ recommended
-- Administrator rights for initial installation of AudioDeviceCmdlets module
-- Windows 10/11 compatible audio devices
+- Windows PowerShell 5.1 or higher
+- Administrator rights for initial installation of AudioDeviceCmdlets module (only required once)
+- Windows compatible audio devices
 - iRacing simulation software
 
 ### Installation
@@ -31,7 +33,7 @@
    ```powershell
    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
    ```
-3. The required AudioDeviceCmdlets module will be installed automatically on first launch.
+3. The required AudioDeviceCmdlets module will be installed automatically on first launch if not already present.
 
 ### First-Time Setup
 1. Start the script `ir-audio-switch.ps1`.
@@ -50,23 +52,22 @@
 2. The script runs in the background and monitors iRacing:
    - When iRacing starts, it automatically switches to the VR audio device and VR microphone.
    - When iRacing closes, it switches back to the default audio device and default microphone.
-3. Exit the script with CTRL+C.
+3. Exit the script gracefully with CTRL+C.
 
 ### Configuration
 The configuration is stored in `ir-audio-switch.cfg.json` and contains:
-- Default audio device (`defaultDevice`)
-- VR audio device (`vrDevice`)
-- Default microphone (`defaultMic`)
-- VR microphone (`vrMic`)
-- Maximum number of log lines (`maxLogLines`)
+- `defaultDevice`: Your default audio device.
+- `vrDevice`: Your VR audio device.
+- `defaultMic`: Your default microphone.
+- `vrMic`: Your VR microphone.
+- `maxLogLines`: Maximum number of lines to keep in the log file.
 
 ### Parameters
 The script accepts the following parameters:
-- `-LogFile`: Path to the log file (default: ir-audio-switch.log in script directory)
-- `-MaxLogLines`: Maximum number of lines to keep in the log file (default: 42, range: 10-10000)
+- `-LogFile`: Path to the log file (default: `ir-audio-switch.log` in the script directory).
+- `-MaxLogLines`: Maximum number of lines to keep in the log file (default: 42, range: 10-10000).
 
 Example:
-
 ```powershell
 .\ir-audio-switch.ps1 -LogFile "C:\path\to\logfile.log" -MaxLogLines 100
 ```
@@ -90,7 +91,7 @@ Example configuration in `ir-audio-switch.cfg.json` for a typical VR racing setu
 If you encounter any issues, try the following steps:
 
 1. Ensure that your audio devices are properly connected and recognized by Windows.
-2. Check the log file for any error messages.
+2. Check the log file (`ir-audio-switch.log` by default) for any error messages.
 3. Make sure you have the necessary permissions to run the script and change audio devices.
 4. Re-run the first-time setup if you have changed your audio devices.
 
