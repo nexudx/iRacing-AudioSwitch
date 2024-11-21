@@ -7,7 +7,7 @@
     when iRacing starts or stops. It provides support for multiple profiles, detailed logging, and robust error handling.
 
 .PARAMETER LogFile
-    Path to the log file. Defaults to 'ir-audio-switch.log' in the script directory.
+    Path to the log file. Defaults to 'IRAudioSwitch.log' in the script directory.
 
 .PARAMETER MaxLogLines
     Maximum number of lines to keep in the log file. Defaults to 42. Valid range is 10-10000.
@@ -19,15 +19,15 @@
     Optional name of a saved audio device profile to use.
 
 .EXAMPLE
-    .\ir-audio-switch.ps1
+    .\IRAudioSwitch.ps1
     Starts the script with default settings.
 
 .EXAMPLE
-    .\ir-audio-switch.ps1 -LogFile "C:\logs\audio-switch.log" -MaxLogLines 100 -LogLevel Debug
+    .\IRAudioSwitch.ps1 -LogFile "C:\logs\audio-switch.log" -MaxLogLines 100 -LogLevel Debug
     Starts the script with custom logging settings.
 
 .EXAMPLE
-    .\ir-audio-switch.ps1 -ProfileName "racing"
+    .\IRAudioSwitch.ps1 -ProfileName "racing"
     Starts the script using a saved audio device profile.
 
 .NOTES
@@ -43,7 +43,7 @@ param(
         }
         return $true
     })]
-    [string]$LogFile = "$(Join-Path $PSScriptRoot 'ir-audio-switch.log')",
+    [string]$LogFile = "$(Join-Path $PSScriptRoot 'IRAudioSwitch.log')",
     
     [ValidateRange(10, 10000)]
     [int]$MaxLogLines = 42,

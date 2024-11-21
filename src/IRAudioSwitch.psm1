@@ -87,9 +87,9 @@ class AudioDeviceManager {
 #EndRegion Classes
 
 #Region Script Variables
-$script:configPath = Join-Path $PSScriptRoot "ir-audio-switch.cfg.json"
+$script:configPath = Join-Path $PSScriptRoot "IRAudioSwitch.cfg.json"
 $script:exitRequested = $false
-$script:LogFile = Join-Path $PSScriptRoot "ir-audio-switch.log"
+$script:LogFile = Join-Path $PSScriptRoot "IRAudioSwitch.log"
 $script:MaxLogLines = 42
 $script:LogLevel = 'Info'
 $script:AudioManager = $null
