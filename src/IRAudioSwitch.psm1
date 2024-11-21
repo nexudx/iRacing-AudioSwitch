@@ -1,6 +1,5 @@
 using namespace System.Collections.Generic
 
-#Region Classes
 class ProcessMonitor {
     [string]$ProcessName
     [int]$PollInterval
@@ -8,13 +7,13 @@ class ProcessMonitor {
 
     ProcessMonitor() {
         $this.ProcessName = "iRacingSim64DX11"
-        $this.PollInterval = 500  # Increased from 250ms to 500ms for better performance
+        $this.PollInterval = 500
         $this.IsRunning = $false
     }
     
     ProcessMonitor([string]$name) {
         $this.ProcessName = $name
-        $this.PollInterval = 500  # Increased from 250ms to 500ms for better performance
+        $this.PollInterval = 500
         $this.IsRunning = $false
     }
     
@@ -84,9 +83,7 @@ class AudioDeviceManager {
         return $null
     }
 }
-#EndRegion Classes
 
-#Region Script Variables
 $script:configPath = Join-Path $PSScriptRoot "IRAudioSwitch.cfg.json"
 $script:exitRequested = $false
 $script:LogFile = Join-Path $PSScriptRoot "IRAudioSwitch.log"
@@ -99,9 +96,7 @@ $script:LogLevels = @{
     'Info' = 2
     'Debug' = 3
 }
-#EndRegion Script Variables
 
-#Region Helper Functions
 function Write-Log {
     [CmdletBinding()]
     param(
@@ -256,9 +251,7 @@ function Set-DefaultAudioDevice {
 
     return $success
 }
-#EndRegion Helper Functions
 
-#Region Main Functions
 function Initialize-DeviceConfiguration {
     $devices = Get-AudioDevice -List | Where-Object { $_.Type -eq 'Playback' }
     $mics = Get-AudioDevice -List | Where-Object { $_.Type -eq 'Recording' }
@@ -514,7 +507,5 @@ function Start-AudioSwitcher {
         throw
     }
 }
-#EndRegion Main Functions
 
-# Export functions
 Export-ModuleMember -Function Start-AudioSwitcher
