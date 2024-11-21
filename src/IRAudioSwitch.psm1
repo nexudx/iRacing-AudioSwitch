@@ -170,33 +170,6 @@ function Test-Configuration {
     }
 }
 
-function Save-AudioProfile {
-    param (
-        [Parameter(Mandatory)][string]$ProfileName,
-        [Parameter(Mandatory)][hashtable]$Config
-    )
-    
-    $profilePath = Join-Path $PSScriptRoot "profiles/$ProfileName.json"
-    Test-Configuration -Config $Config
-    $Config | ConvertTo-Json | Set-Content -Path $profilePath -Encoding UTF8
-    Write-Log "Saved audio profile: $ProfileName"
-}
-
-function Get-AudioProfile {
-    param (
-        [Parameter(Mandatory)][string]$ProfileName
-    )
-    
-    $profilePath = Join-Path $PSScriptRoot "profiles/$ProfileName.json"
-    if (-not (Test-Path $profilePath)) {
-        throw "Profile not found: $ProfileName"
-    }
-    
-    $config = Get-Content -Path $profilePath -Raw | ConvertFrom-Json -AsHashtable
-    Test-Configuration -Config $config
-    return $config
-}
-
 function Set-DefaultAudioDevice {
     [OutputType([bool])]
     param(
@@ -504,9 +477,7 @@ function Start-AudioSwitcher {
         [int]$MaxLogLines = $script:MaxLogLines,
 
         [ValidateSet('Error', 'Warning', 'Info', 'Debug')]
-        [string]$LogLevel = 'Info',
-
-        [string]$ProfileName
+        [string]$LogLevel = 'Info'
     )
 
     Set-StrictMode -Version 5.1
@@ -524,15 +495,9 @@ function Start-AudioSwitcher {
         }
         Import-Module AudioDeviceCmdlets
 
-        $config = if ($ProfileName) {
-            Get-AudioProfile -ProfileName $ProfileName
-        } else {
-            $savedConfig = Get-SavedConfiguration
-            if ($null -eq $savedConfig) {
-                Initialize-DeviceConfiguration
-            } else {
-                $savedConfig
-            }
+        $config = Get-SavedConfiguration
+        if ($null -eq $config) {
+            $config = Initialize-DeviceConfiguration
         }
         
         Write-Log "Starting with configuration:"
@@ -552,4 +517,4 @@ function Start-AudioSwitcher {
 #EndRegion Main Functions
 
 # Export functions
-Export-ModuleMember -Function Start-AudioSwitcher, Save-AudioProfile, Get-AudioProfile
+Export-ModuleMember -Function Start-AudioSwitcher

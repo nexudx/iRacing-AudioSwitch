@@ -8,7 +8,6 @@ A PowerShell module that automatically switches audio devices when launching iRa
 
 - Automatic audio device switching when iRacing starts/stops
 - Supports both playback devices and microphones
-- Profile support for different audio configurations
 - Robust error handling and automatic recovery
 - Detailed logging with configurable levels
 - Cross-session configuration persistence
@@ -19,21 +18,28 @@ A PowerShell module that automatically switches audio devices when launching iRa
 - Windows operating system
 - [AudioDeviceCmdlets](https://www.powershellgallery.com/packages/AudioDeviceCmdlets/) module (automatically installed if missing)
 
-## Installation
+## Installation & Usage
 
-1. Clone this repository or download the latest release
-2. Import the module:
+You have two ways to use IR Audio Switch:
+
+### 1. Direct Script Execution (Simplest)
+
+Simply run the PowerShell script directly:
 ```powershell
-Import-Module .\src\IRAudioSwitch.psm1
+.\IRAudioSwitch.ps1
 ```
 
-## Usage
+### 2. Module Import (Recommended for Development)
 
-### Basic Usage
-
-Start the audio switcher with default settings:
-
+Import the module using either:
 ```powershell
+# Using the module manifest (recommended)
+Import-Module .\src\IRAudioSwitch.psd1
+
+# Or directly import the module file
+Import-Module .\src\IRAudioSwitch.psm1
+
+# Then start the audio switcher
 Start-AudioSwitcher
 ```
 
@@ -43,31 +49,12 @@ On first run, you'll be prompted to select your:
 - Default microphone
 - VR microphone
 
-### Advanced Usage
+## Advanced Usage
 
 Start with custom logging options:
 
 ```powershell
 Start-AudioSwitcher -LogFile "C:\logs\ir-audio.log" -MaxLogLines 100 -LogLevel "Debug"
-```
-
-### Using Profiles
-
-Save a new audio configuration profile:
-
-```powershell
-Save-AudioProfile -ProfileName "my-setup" -Config @{
-    defaultDevice = "Speakers"
-    vrDevice = "HP Reverb G2"
-    defaultMic = "Desktop Mic"
-    vrMic = "VR Headset Mic"
-}
-```
-
-Start the switcher with a saved profile:
-
-```powershell
-Start-AudioSwitcher -ProfileName "my-setup"
 ```
 
 ## Parameters
@@ -76,10 +63,9 @@ Start-AudioSwitcher -ProfileName "my-setup"
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| LogFile | Path to the log file | ir-audio-switch.log |
+| LogFile | Path to the log file | .\src\IRAudioSwitch.log |
 | MaxLogLines | Maximum number of lines to keep in log file | 42 |
-| LogLevel | Logging detail level (Error, Warning, Info, Debug) | Info |
-| ProfileName | Name of the audio profile to use | None |
+| LogLevel | Logging detail level (Error=0, Warning=1, Info=2, Debug=3) | Info |
 
 ## How It Works
 
@@ -92,10 +78,29 @@ The module:
 
 ## Troubleshooting
 
-- Check the log file for detailed error messages
-- Ensure all audio devices are properly connected
-- Verify device names match exactly in your configuration
-- Run PowerShell as administrator if experiencing permission issues
+### Common Issues
+
+1. **Device Not Found Errors**
+   - Verify device names exactly match in your configuration
+   - Check if devices are properly connected and recognized in Windows
+   - Try unplugging and reconnecting problematic devices
+
+2. **Switching Failures**
+   - The module will automatically retry failed switches up to 3 times
+   - Check the log file for specific error messages
+   - Ensure no other applications are blocking audio device changes
+
+3. **Permission Issues**
+   - Run PowerShell as administrator
+   - Check Windows audio permissions
+   - Verify user has write access to the log file location
+
+### Debug Mode
+
+For detailed troubleshooting, run with debug logging:
+```powershell
+Start-AudioSwitcher -LogLevel Debug
+```
 
 ## Contributing
 
