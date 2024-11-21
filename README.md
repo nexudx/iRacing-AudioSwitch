@@ -1,193 +1,106 @@
-# Audio Device Switcher for iRacing 🎧
+# IR Audio Switch
 
-<div align="center">
-  <img src="./docs/static/img/audio_switcher_banner.jpg" alt="Audio Device Switcher Banner" width="100%" />
-</div>
+![IR Audio Switch Banner](docs/static/img/audio_switcher_banner.jpg)
 
-✨ Features
-- 🛠️ Automatic detection of iRacing
-- 🔄 Automatic switching between default and VR audio device
-- 🎤 Automatic switching between default and VR microphone
-- 💾 Persistent configuration with profile support
-- 📜 Enhanced logging with configurable levels
-- 🔄 Fault-tolerant audio device switching with retry mechanism
-- 👥 User-friendly first-time setup with colored indicators
-- 🛑 Clean shutdown with CTRL+C
-- ✨ Enhanced performance with optimized device monitoring
-- 📝 Comprehensive comment-based help
-- 🔍 Device health monitoring
-- 📊 Multiple profile support
+A PowerShell module that automatically switches audio devices when launching iRacing. Perfect for VR users who need different audio configurations for VR and desktop use.
 
-🚀 Quick Start
+## Features
 
-### Prerequisites
-- Windows PowerShell 5.1 or higher
-- Administrator rights for initial installation of AudioDeviceCmdlets module (only required once)
-- Windows compatible audio devices
-- iRacing simulation software
+- Automatic audio device switching when iRacing starts/stops
+- Supports both playback devices and microphones
+- Profile support for different audio configurations
+- Robust error handling and automatic recovery
+- Detailed logging with configurable levels
+- Cross-session configuration persistence
 
-### Installation
-1. Download the entire project folder.
-2. Ensure PowerShell script execution is allowed:
-   ```powershell
-   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-   ```
-3. The required AudioDeviceCmdlets module will be installed automatically on first launch if not present.
+## Requirements
 
-### First-Time Setup
-1. Start the script `ir-audio-switch.ps1`.
-2. On first run, you will be prompted to:
-   - Select your default audio device (current default device highlighted in cyan)
-   - Select your VR audio device
-   - Select your default microphone (current default device highlighted in cyan)
-   - Select your VR microphone
-3. The selection is automatically saved
+- PowerShell 5.1 or higher
+- Windows operating system
+- [AudioDeviceCmdlets](https://www.powershellgallery.com/packages/AudioDeviceCmdlets/) module (automatically installed if missing)
 
-### Usage
-1. Start the script with default settings:
-   ```powershell
-   .\ir-audio-switch.ps1
-   ```
+## Installation
 
-2. Start with custom logging:
-   ```powershell
-   .\ir-audio-switch.ps1 -LogFile "C:\logs\audio.log" -MaxLogLines 100 -LogLevel Debug
-   ```
-
-3. Use a saved profile:
-   ```powershell
-   .\ir-audio-switch.ps1 -ProfileName "racing"
-   ```
-
-4. The script runs in the background and monitors iRacing:
-   - When iRacing starts, it automatically switches to the VR audio device and VR microphone
-   - When iRacing closes, it switches back to the default audio device and default microphone
-5. Exit the script gracefully with CTRL+C
-
-### Configuration
-The configuration is stored in `ir-audio-switch.cfg.json` and contains:
-- `defaultDevice`: Your default audio device
-- `vrDevice`: Your VR audio device
-- `defaultMic`: Your default microphone
-- `vrMic`: Your VR microphone
-- `maxLogLines`: Maximum number of lines to keep in the log file
-
-### Profiles
-You can save multiple device configurations as profiles:
-
+1. Clone this repository or download the latest release
+2. Import the module:
 ```powershell
-# In PowerShell:
 Import-Module .\src\IRAudioSwitch.psm1
+```
 
-# Save current configuration as a profile
-Save-AudioProfile -ProfileName "racing" -Config @{
+## Usage
+
+### Basic Usage
+
+Start the audio switcher with default settings:
+
+```powershell
+Start-AudioSwitcher
+```
+
+On first run, you'll be prompted to select your:
+- Default audio device (used when iRacing is not running)
+- VR audio device (used when iRacing is running)
+- Default microphone
+- VR microphone
+
+### Advanced Usage
+
+Start with custom logging options:
+
+```powershell
+Start-AudioSwitcher -LogFile "C:\logs\ir-audio.log" -MaxLogLines 100 -LogLevel "Debug"
+```
+
+### Using Profiles
+
+Save a new audio configuration profile:
+
+```powershell
+Save-AudioProfile -ProfileName "my-setup" -Config @{
     defaultDevice = "Speakers"
-    vrDevice = "Valve Index Headset"
+    vrDevice = "HP Reverb G2"
     defaultMic = "Desktop Mic"
-    vrMic = "Index Mic"
-}
-
-# Use a saved profile
-.\ir-audio-switch.ps1 -ProfileName "racing"
-```
-
-### Parameters
-The script accepts the following parameters:
-- `-LogFile`: Path to the log file (default: `ir-audio-switch.log` in the script directory)
-- `-MaxLogLines`: Maximum number of lines to keep in the log file (default: 42, range: 10-10000)
-- `-LogLevel`: Logging detail level (Error, Warning, Info, Debug)
-- `-ProfileName`: Name of a saved profile to use
-
-## Configuration Examples
-
-Example configuration in `ir-audio-switch.cfg.json`:
-
-```json
-{
-  "defaultDevice": "Speakers (Realtek High Definition Audio)",
-  "vrDevice": "Headphones (Oculus Virtual Audio Device)",
-  "defaultMic": "Microphone (Realtek High Definition Audio)",
-  "vrMic": "Microphone (Oculus Virtual Audio Device)",
-  "maxLogLines": 100
+    vrMic = "VR Headset Mic"
 }
 ```
 
-Example profile in `profiles/racing.json`:
+Start the switcher with a saved profile:
 
-```json
-{
-  "defaultDevice": "Speakers (Realtek High Definition Audio)",
-  "vrDevice": "Valve Index Headset",
-  "defaultMic": "Blue Yeti",
-  "vrMic": "Index Microphone",
-  "maxLogLines": 100
-}
-```
-
-## Advanced Features
-
-### Logging Levels
-
-The script supports four logging levels:
-- `Error`: Only critical errors
-- `Warning`: Errors and warnings
-- `Info`: Normal operation information (default)
-- `Debug`: Detailed debugging information
-
-Example:
 ```powershell
-.\ir-audio-switch.ps1 -LogLevel Debug
+Start-AudioSwitcher -ProfileName "my-setup"
 ```
 
-### Device Health Monitoring
+## Parameters
 
-The script automatically monitors the health of configured audio devices and will:
-- Verify device availability on startup
-- Utilize efficient device caching for improved performance
-- Retry failed device switches
-- Log detailed device state changes
-- Monitor iRacing with optimized polling (500ms interval)
+### Start-AudioSwitcher
 
-### Profile Management
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| LogFile | Path to the log file | ir-audio-switch.log |
+| MaxLogLines | Maximum number of lines to keep in log file | 42 |
+| LogLevel | Logging detail level (Error, Warning, Info, Debug) | Info |
+| ProfileName | Name of the audio profile to use | None |
 
-You can manage multiple device configurations:
-```powershell
-# Save current setup as a profile
-Save-AudioProfile -ProfileName "racing" -Config $currentConfig
+## How It Works
 
-# Use a saved profile
-Get-AudioProfile -ProfileName "racing"
-```
+The module:
+1. Monitors for the iRacing process (iRacingSim64DX11)
+2. When iRacing launches, switches to VR audio devices
+3. When iRacing closes, reverts to default audio devices
+4. Handles errors and automatically retries failed device switches
+5. Maintains a log file for troubleshooting
 
 ## Troubleshooting
 
-If you encounter any issues:
+- Check the log file for detailed error messages
+- Ensure all audio devices are properly connected
+- Verify device names match exactly in your configuration
+- Run PowerShell as administrator if experiencing permission issues
 
-1. Check device availability:
-   - Ensure all configured audio devices are properly connected
-   - Verify devices are recognized in Windows Sound settings
+## Contributing
 
-2. Check logs:
-   - Use `-LogLevel Debug` for detailed information
-   - Review the log file for error messages
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-3. Profile issues:
-   - Verify profile exists in the profiles directory
-   - Check profile JSON format
-   - Ensure configured devices are available
+## License
 
-4. Performance issues:
-   - Check CPU usage (script uses optimized polling to minimize impact)
-   - Verify no conflicting audio management software
-   - Ensure latest Windows updates are installed
-
-5. Common solutions:
-   - Restart the script
-   - Reconnect audio devices
-   - Re-run first-time setup
-   - Clear the log file
-   - Create a new profile
-
-## Licensing
-
-This project is licensed under the MIT License. See the `LICENSE` file for more details.
+This project is licensed under the terms of the LICENSE.txt file included in the repository.
